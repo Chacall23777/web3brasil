@@ -48,7 +48,9 @@ export function Layout() {
                 ) : null,
               )}
             </div>
-            {user ? (
+            {loading ? (
+              <div className="h-8 w-20 rounded-md bg-muted animate-pulse" />
+            ) : user ? (
               <>
                 <Link to="/perfil" className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-muted">
                   {profile?.avatar_url ? (
