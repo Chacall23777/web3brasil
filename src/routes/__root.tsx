@@ -12,6 +12,10 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
+const siteTitle = "WEB3BRASIL — Radar Cripto BR";
+const siteDescription =
+  "Comunidade brasileira de cripto com noticias, projetos, lancamentos e pre-vendas de tokens nacionais.";
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -77,20 +81,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "web3brasil" },
-      { name: "description", content: "🚀 Comunidade oficial de apoio aos Tokens BR 🇧🇷 💎 Notícias | Projetos | Oportunidades Web3 🤝 Juntos fortalecendo o ecossistema brasileiro" },
+      { title: siteTitle },
+      { name: "description", content: siteDescription },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "web3brasil" },
-      { property: "og:description", content: "🚀 Comunidade oficial de apoio aos Tokens BR 🇧🇷 💎 Notícias | Projetos | Oportunidades Web3 🤝 Juntos fortalecendo o ecossistema brasileiro" },
+      { property: "og:title", content: siteTitle },
+      { property: "og:description", content: siteDescription },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "web3brasil" },
-      { name: "twitter:description", content: "🚀 Comunidade oficial de apoio aos Tokens BR 🇧🇷 💎 Notícias | Projetos | Oportunidades Web3 🤝 Juntos fortalecendo o ecossistema brasileiro" },
-
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/EXtaR3iy8nfSHz71pHypSiP0C7G3/social-images/social-1782914839933-Captura_de_tela_2026-07-01_110658.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/EXtaR3iy8nfSHz71pHypSiP0C7G3/social-images/social-1782914839933-Captura_de_tela_2026-07-01_110658.webp" },
-
+      { name: "twitter:title", content: siteTitle },
+      { name: "twitter:description", content: siteDescription },
     ],
     links: [
       {
