@@ -68,6 +68,12 @@ export function Ticker() {
       (await supabase.from("ticker_config").select("speed_seconds").eq("id", 1).maybeSingle()).data,
     staleTime: 60_000,
   });
+  const { data: majors = [] } = useQuery({
+    queryKey: ["ticker-majors"],
+    queryFn: fetchMajors,
+    refetchInterval: 30_000,
+    staleTime: 20_000,
+  });
   const { data: listed = [] } = useQuery({
     queryKey: ["ticker-listed"],
     queryFn: fetchListedTokens,
@@ -75,7 +81,8 @@ export function Ticker() {
     staleTime: 20_000,
   });
 
-  const items = listed;
+  const items = [...majors, ...listed];
+
   if (!items.length) return null;
   const loop = [...items, ...items];
   const speed = config?.speed_seconds ?? 15;
