@@ -754,7 +754,10 @@ async function loadChart(){
     const candles = await fetchHistory(coin, currentTF);
     if(!candles || candles.length<2) throw new Error('sem dados');
     currentCandles = candles.filter(d=>d.c>0);
+    viewCount = currentCandles.length;
+    viewStart = 0;
     const first = currentCandles[0].o, last = currentCandles[currentCandles.length-1].c;
+
     const change = ((last-first)/first)*100;
     document.getElementById('chartPrice').textContent = fmtBRL(last);
     const chEl = document.getElementById('chartChange');
