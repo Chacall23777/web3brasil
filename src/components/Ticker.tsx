@@ -34,9 +34,9 @@ async function fetchMajors(): Promise<TickerItem[]> {
     return MAJORS.map((m) => ({ key: m.symbol, symbol: m.symbol, priceBrl: null, change24h: null }));
   }
 }
-
-
+async function fetchListedTokens(): Promise<TickerItem[]> {
   const { data } = await supabase
+
     .from("ticker_tokens")
     .select("contract_address")
     .eq("ativo", true)
