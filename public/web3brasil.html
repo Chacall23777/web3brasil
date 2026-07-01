@@ -486,33 +486,48 @@ async function loadChart(){
 }
 loadChart();
 
-/* ---------- Storage (shared KV via jsonblob) ---------- */
-async function readStore(){
+/* ---------- Storage (Claude Artifact — window.storage) ---------- */
+const STORAGE_OK = typeof window !== 'undefined' && !!window.storage
+  && typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
+const K_PENDING = 'web3brasil:pending';
+const K_PUBLISHED = 'web3brasil:published';
+
+async function sGet(key){
+  if(!STORAGE_OK) return null;
   try{
-    const r = await fetch(BLOB_URL,{cache:'no-store'});
-    if(!r.ok) throw new Error('rede');
-    const j = await r.json();
-    return {pending:Array.isArray(j.pending)?j.pending:[], published:Array.isArray(j.published)?j.published:[]};
-  }catch(e){
-    console.warn('Falha ao ler armazenamento',e);
-    return null;
-  }
+    const v = await window.storage.get(key);
+    if(v==null) return [];
+    if(Array.isArray(v)) return v;
+    if(typeof v === 'string'){
+      try{ const p = JSON.parse(v); return Array.isArray(p)?p:[]; }
+      catch(_){ return []; }
+    }
+    return [];
+  }catch(e){ console.warn('storage.get falhou', key, e); return null; }
 }
-async function writeStore(state){
-  try{
-    const r = await fetch(BLOB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});
-    if(!r.ok) throw new Error('rede');
-    return true;
-  }catch(e){ console.warn('Falha ao gravar armazenamento',e); return false; }
+async function sSet(key, val){
+  if(!STORAGE_OK) return false;
+  try{ await window.storage.set(key, val); return true; }
+  catch(e){ console.warn('storage.set falhou', key, e); return false; }
+}
+async function readStore(){
+  const [pending, published] = await Promise.all([sGet(K_PENDING), sGet(K_PUBLISHED)]);
+  return {
+    available: STORAGE_OK,
+    pending: pending || [],
+    published: published || [],
+    pendingError: STORAGE_OK && pending === null,
+    publishedError: STORAGE_OK && published === null,
+  };
 }
 
-/* ---------- Sample fallback projects ---------- */
+/* ---------- Sample fallback projects (conteúdo neutro, só descritivo) ---------- */
 const SAMPLE = [
-  {id:'ex1',name:'SambaFi',chain:'Polygon',status:'Pré-venda',desc:'Protocolo de pagamentos PIX ↔ stablecoin voltado para pequenos comércios brasileiros.',_sample:true},
-  {id:'ex2',name:'MANGUE',chain:'Base',status:'Lançamento',desc:'Camada de liquidez focada em ativos tokenizados do agronegócio nordestino.',_sample:true},
-  {id:'ex3',name:'BOTECO',chain:'BNB',status:'Pré-venda',desc:'Programa de fidelidade Web3 para bares e restaurantes independentes.',_sample:true},
+  {id:'ex1',name:'SambaFi',chain:'Polygon',status:'Pré-venda',desc:'Protocolo de pagamentos entre PIX e stablecoin voltado a pequenos comércios brasileiros.',_sample:true},
+  {id:'ex2',name:'MANGUE',chain:'Base',status:'Lançamento',desc:'Camada de liquidez para ativos tokenizados do agronegócio nordestino.',_sample:true},
+  {id:'ex3',name:'BOTECO',chain:'BNB',status:'Pré-venda',desc:'Programa de fidelidade em Web3 para bares e restaurantes independentes.',_sample:true},
   {id:'ex4',name:'CERRADO',chain:'Solana',status:'Listado',desc:'Marketplace de créditos de carbono do bioma Cerrado com verificação on-chain.',_sample:true},
-  {id:'ex5',name:'JEQUI',chain:'Polygon',status:'Pré-venda',desc:'DAO de artistas do audiovisual brasileiro para financiar produções independentes.',_sample:true},
+  {id:'ex5',name:'JEQUI',chain:'Polygon',status:'Pré-venda',desc:'DAO de artistas do audiovisual brasileiro voltada ao financiamento de produções independentes.',_sample:true},
   {id:'ex6',name:'PIRAÍ',chain:'Ethereum',status:'Listado',desc:'Stablecoin lastreada em recebíveis de energia solar distribuída no interior de SP.',_sample:true},
 ];
 
@@ -537,27 +552,29 @@ function drawSpark(canvas, data, up){
   });
   ctx.stroke();
 }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 
 async function renderProjects(){
   const grid = document.getElementById('projectsGrid');
   const state = await readStore();
-  let list;
-  if(!state){
-    grid.innerHTML = '<div class="empty">Não foi possível carregar a grade agora. Recarregue a página em alguns segundos.</div>';
-    return;
-  }
-  if(state.published.length>0){ list = state.published; }
-  else { list = SAMPLE; }
+  const list = state.published.length > 0 ? state.published : SAMPLE;
 
   document.getElementById('statProjects').textContent = state.published.length || SAMPLE.length;
   document.getElementById('statPre').textContent = list.filter(p=>p.status==='Pré-venda').length;
   document.getElementById('statPending').textContent = state.pending.length;
 
+  let notice = '';
+  if(!state.available){
+    notice = '<div class="empty" style="margin-bottom:16px">Armazenamento não disponível neste ambiente — exibindo projetos de exemplo.</div>';
+  } else if(state.publishedError){
+    notice = '<div class="empty" style="margin-bottom:16px">Não foi possível carregar os projetos publicados agora.</div>';
+  }
+
   if(list.length===0){
-    grid.innerHTML = '<div class="empty">Nenhum projeto publicado ainda. Seja o primeiro a enviar.</div>';
+    grid.innerHTML = notice + '<div class="empty">Nenhum projeto publicado ainda. Seja o primeiro a enviar.</div>';
     return;
   }
-  grid.innerHTML = list.map((p,i)=>{
+  grid.innerHTML = notice + list.map((p,i)=>{
     const seed = (p.name||'').charCodeAt(0)+i*13+1;
     const up = seed%2===0;
     const pct = ((seed*3.14)%18 - 6).toFixed(2);
@@ -581,7 +598,6 @@ async function renderProjects(){
     drawSpark(c, randomSpark(seed), seed%2===0);
   });
 }
-function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 renderProjects();
 
 /* ---------- Submit form ---------- */
@@ -603,12 +619,20 @@ form.addEventListener('submit', async e=>{
   if(!item.name||!item.chain||!item.link||!item.desc||!item.contact){
     msg.style.display='block'; msg.className='form-msg err'; msg.textContent='Preencha todos os campos.'; return;
   }
+  if(!STORAGE_OK){
+    msg.style.display='block'; msg.className='form-msg err';
+    msg.textContent='Armazenamento não disponível neste ambiente.';
+    return;
+  }
   btn.disabled=true; btn.textContent='Enviando…';
   msg.style.display='block'; msg.className='form-msg'; msg.textContent='Salvando submissão…';
-  const state = await readStore();
-  if(!state){ msg.className='form-msg err'; msg.textContent='Não foi possível conectar ao armazenamento. Tente novamente.'; btn.disabled=false; btn.textContent='Enviar para aprovação'; return; }
-  state.pending.push(item);
-  const ok = await writeStore(state);
+  const cur = await sGet(K_PENDING);
+  if(cur===null){
+    msg.className='form-msg err'; msg.textContent='Falha ao ler a fila. Tente novamente.';
+    btn.disabled=false; btn.textContent='Enviar para aprovação'; return;
+  }
+  cur.push(item);
+  const ok = await sSet(K_PENDING, cur);
   btn.disabled=false; btn.textContent='Enviar para aprovação';
   if(ok){
     msg.className='form-msg ok';
@@ -650,13 +674,18 @@ async function renderAdmin(){
   const pub = document.getElementById('publishedList');
   pend.innerHTML = '<div class="loading">Carregando…</div>';
   pub.innerHTML = '<div class="loading">Carregando…</div>';
-  const state = await readStore();
-  if(!state){
-    pend.innerHTML = '<div class="empty">Não foi possível carregar. Tente recarregar a página.</div>';
-    pub.innerHTML = '<div class="empty">Não foi possível carregar.</div>';
+
+  if(!STORAGE_OK){
+    pend.innerHTML = '<div class="empty">Armazenamento não disponível neste ambiente.</div>';
+    pub.innerHTML = '<div class="empty">Armazenamento não disponível neste ambiente.</div>';
     return;
   }
-  if(state.pending.length===0){
+
+  const state = await readStore();
+
+  if(state.pendingError){
+    pend.innerHTML = '<div class="empty">Falha ao carregar a fila. Tente recarregar.</div>';
+  } else if(state.pending.length===0){
     pend.innerHTML = '<div class="empty">Nenhuma solicitação pendente por aqui. Quando alguém enviar, aparece nesta lista.</div>';
   } else {
     pend.innerHTML = state.pending.map(p=>`
@@ -672,7 +701,10 @@ async function renderAdmin(){
         </div>
       </div>`).join('');
   }
-  if(state.published.length===0){
+
+  if(state.publishedError){
+    pub.innerHTML = '<div class="empty">Falha ao carregar publicados. Tente recarregar.</div>';
+  } else if(state.published.length===0){
     pub.innerHTML = '<div class="empty">Nenhum projeto publicado ainda. Aprove uma submissão ou publique direto.</div>';
   } else {
     pub.innerHTML = state.published.map(p=>`
@@ -693,18 +725,28 @@ async function renderAdmin(){
 }
 
 async function moderate(action,id){
-  const state = await readStore();
-  if(!state) return alert('Falha ao carregar armazenamento.');
+  if(!STORAGE_OK){ alert('Armazenamento não disponível neste ambiente.'); return; }
   if(action==='approve'){
-    const idx = state.pending.findIndex(p=>p.id===id);
-    if(idx>=0){ const it = state.pending.splice(idx,1)[0]; delete it.contact; state.published.unshift(it); }
+    const [pending, published] = await Promise.all([sGet(K_PENDING), sGet(K_PUBLISHED)]);
+    if(pending===null || published===null){ alert('Falha ao carregar armazenamento.'); return; }
+    const idx = pending.findIndex(p=>p.id===id);
+    if(idx<0){ renderAdmin(); return; }
+    const it = pending.splice(idx,1)[0]; delete it.contact;
+    published.unshift(it);
+    const a = await sSet(K_PENDING, pending);
+    const b = await sSet(K_PUBLISHED, published);
+    if(!a || !b){ alert('Falha ao gravar alteração.'); return; }
   } else if(action==='reject'){
-    state.pending = state.pending.filter(p=>p.id!==id);
+    const pending = await sGet(K_PENDING);
+    if(pending===null){ alert('Falha ao carregar a fila.'); return; }
+    const ok = await sSet(K_PENDING, pending.filter(p=>p.id!==id));
+    if(!ok){ alert('Falha ao gravar alteração.'); return; }
   } else if(action==='remove'){
-    state.published = state.published.filter(p=>p.id!==id);
+    const published = await sGet(K_PUBLISHED);
+    if(published===null){ alert('Falha ao carregar publicados.'); return; }
+    const ok = await sSet(K_PUBLISHED, published.filter(p=>p.id!==id));
+    if(!ok){ alert('Falha ao gravar alteração.'); return; }
   }
-  const ok = await writeStore(state);
-  if(!ok) return alert('Falha ao gravar alteração.');
   renderAdmin(); renderProjects();
 }
 
@@ -723,14 +765,19 @@ document.getElementById('directForm').addEventListener('submit', async e=>{
   if(!item.name||!item.chain||!item.link||!item.desc){
     msg.style.display='block'; msg.className='form-msg err'; msg.textContent='Preencha todos os campos.'; return;
   }
+  if(!STORAGE_OK){
+    msg.style.display='block'; msg.className='form-msg err';
+    msg.textContent='Armazenamento não disponível neste ambiente.'; return;
+  }
   msg.style.display='block'; msg.className='form-msg'; msg.textContent='Publicando…';
-  const state = await readStore();
-  if(!state){ msg.className='form-msg err'; msg.textContent='Falha ao carregar armazenamento.'; return; }
-  state.published.unshift(item);
-  const ok = await writeStore(state);
+  const published = await sGet(K_PUBLISHED);
+  if(published===null){ msg.className='form-msg err'; msg.textContent='Falha ao carregar publicados.'; return; }
+  published.unshift(item);
+  const ok = await sSet(K_PUBLISHED, published);
   if(ok){ msg.className='form-msg ok'; msg.textContent='Projeto publicado no radar.'; e.target.reset(); renderAdmin(); renderProjects(); }
   else { msg.className='form-msg err'; msg.textContent='Falha ao publicar.'; }
 });
+
 
 /* ---------- Mobile menu ---------- */
 document.getElementById('menuToggle').onclick = ()=>{
