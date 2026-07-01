@@ -215,9 +215,34 @@ export function NewPostForm() {
         </TabsContent>
       </Tabs>
 
+      <div className="mt-4 space-y-2">
+        <label className="text-xs text-muted-foreground">Anexar PDF (livro, whitepaper, etc.) — até {MAX_PDF_MB}MB</label>
+        {file ? (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-2">
+            <FileText size={16} className="text-primary shrink-0" />
+            <span className="text-sm truncate flex-1">{file.name}</span>
+            <span className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)}MB</span>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setFile(null)}>
+              <X size={14} />
+            </Button>
+          </div>
+        ) : (
+          <Input
+            type="file"
+            accept="application/pdf,.pdf"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              if (f.size > MAX_PDF_MB * 1024 * 1024) { toast.error(`Arquivo maior que ${MAX_PDF_MB}MB`); return; }
+              setFile(f);
+            }}
+          />
+        )}
+      </div>
+
       <div className="flex justify-end mt-4">
-        <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
-          {submit.isPending ? "Publicando…" : "Publicar"}
+        <Button onClick={() => submit.mutate()} disabled={submit.isPending || uploading}>
+          {uploading ? "Enviando arquivo…" : submit.isPending ? "Publicando…" : "Publicar"}
         </Button>
       </div>
     </div>
