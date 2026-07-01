@@ -10,48 +10,50 @@ type TickerItem = {
   image?: string | null;
 };
 
-const MAJORS = [
-  { id: "bitcoin", symbol: "BTC" },
-  { id: "ethereum", symbol: "ETH" },
-  { id: "solana", symbol: "SOL" },
-  { id: "binancecoin", symbol: "BNB" },
-];
+type TokenRow = {
+  id: string;
+  contract_address: string;
+  chain: string;
+  ordem: number;
+  ativo: boolean;
+  fonte: "coingecko" | "dexscreener";
+  symbol: string | null;
+};
 
-async function fetchMajors(): Promise<TickerItem[]> {
+async function fetchCoingecko(rows: TokenRow[]): Promise<TickerItem[]> {
+  if (!rows.length) return [];
   try {
-    const ids = MAJORS.map((m) => m.id).join(",");
+    const ids = rows.map((r) => r.contract_address).join(",");
     const r = await fetch(
       `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl&include_24hr_change=true`,
     );
     const j = await r.json();
-    return MAJORS.map((m) => ({
-      key: m.symbol,
-      symbol: m.symbol,
-      priceBrl: j?.[m.id]?.brl ?? null,
-      change24h: j?.[m.id]?.brl_24h_change ?? null,
+    return rows.map((row) => ({
+      key: row.id,
+      symbol: (row.symbol || row.contract_address).toUpperCase(),
+      priceBrl: j?.[row.contract_address]?.brl ?? null,
+      change24h: j?.[row.contract_address]?.brl_24h_change ?? null,
     }));
   } catch {
-    return MAJORS.map((m) => ({ key: m.symbol, symbol: m.symbol, priceBrl: null, change24h: null }));
+    return rows.map((row) => ({
+      key: row.id,
+      symbol: (row.symbol || row.contract_address).toUpperCase(),
+      priceBrl: null,
+      change24h: null,
+    }));
   }
 }
-async function fetchListedTokens(): Promise<TickerItem[]> {
-  const { data } = await supabase
 
-    .from("ticker_tokens")
-    .select("contract_address")
-    .eq("ativo", true)
-    .order("ordem", { ascending: true });
-
-  const list = (data ?? []).map((t) => t.contract_address).filter(Boolean);
-  if (!list.length) return [];
+async function fetchDex(rows: TokenRow[]): Promise<TickerItem[]> {
+  if (!rows.length) return [];
   const rate = await getUsdBrlRate();
   const results = await Promise.all(
-    list.map(async (addr) => {
-      const info = await lookupToken(addr).catch(() => null);
+    rows.map(async (row) => {
+      const info = await lookupToken(row.contract_address).catch(() => null);
       if (!info) return null;
       return {
-        key: addr,
-        symbol: info.symbol || "?",
+        key: row.id,
+        symbol: info.symbol || row.symbol || "?",
         priceBrl: info.priceUsd != null ? info.priceUsd * rate : null,
         change24h: info.priceChange24h,
         image: info.image,
@@ -61,6 +63,22 @@ async function fetchListedTokens(): Promise<TickerItem[]> {
   return results.filter((x): x is TickerItem => !!x);
 }
 
+async function fetchAll(): Promise<TickerItem[]> {
+  const { data } = await supabase
+    .from("ticker_tokens")
+    .select("id, contract_address, chain, ordem, ativo, fonte, symbol")
+    .eq("ativo", true)
+    .order("ordem", { ascending: true });
+  const rows = ((data ?? []) as unknown as TokenRow[]);
+  const cg = rows.filter((r) => r.fonte === "coingecko");
+  const dx = rows.filter((r) => r.fonte !== "coingecko");
+  const [a, b] = await Promise.all([fetchCoingecko(cg), fetchDex(dx)]);
+  // Preserve original order from `rows`
+  const byId = new Map<string, TickerItem>();
+  [...a, ...b].forEach((it) => byId.set(it.key, it));
+  return rows.map((r) => byId.get(r.id)).filter((x): x is TickerItem => !!x);
+}
+
 export function Ticker() {
   const { data: config } = useQuery({
     queryKey: ["ticker_config"],
@@ -68,25 +86,16 @@ export function Ticker() {
       (await supabase.from("ticker_config").select("speed_seconds").eq("id", 1).maybeSingle()).data,
     staleTime: 60_000,
   });
-  const { data: majors = [] } = useQuery({
-    queryKey: ["ticker-majors"],
-    queryFn: fetchMajors,
+  const { data: items = [] } = useQuery({
+    queryKey: ["ticker-all"],
+    queryFn: fetchAll,
     refetchInterval: 30_000,
     staleTime: 20_000,
   });
-  const { data: listed = [] } = useQuery({
-    queryKey: ["ticker-listed"],
-    queryFn: fetchListedTokens,
-    refetchInterval: 30_000,
-    staleTime: 20_000,
-  });
-
-  const items = [...majors, ...listed];
 
   if (!items.length) return null;
   const loop = [...items, ...items];
   const speed = config?.speed_seconds ?? 15;
-
 
   return (
     <div className="border-b bg-background/70 backdrop-blur overflow-hidden">

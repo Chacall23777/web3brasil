@@ -111,7 +111,7 @@ function TickerAdmin() {
       setNewAddr(""); setPreview(null);
       toast.success("Token adicionado");
       qc.invalidateQueries({ queryKey: ["ticker_tokens_admin"] });
-      qc.invalidateQueries({ queryKey: ["ticker-listed"] });
+      qc.invalidateQueries({ queryKey: ["ticker-all"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -124,7 +124,7 @@ function TickerAdmin() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ticker_tokens_admin"] });
-      qc.invalidateQueries({ queryKey: ["ticker-listed"] });
+      qc.invalidateQueries({ queryKey: ["ticker-all"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -137,9 +137,10 @@ function TickerAdmin() {
     onSuccess: () => {
       toast.success("Removido");
       qc.invalidateQueries({ queryKey: ["ticker_tokens_admin"] });
-      qc.invalidateQueries({ queryKey: ["ticker-listed"] });
+      qc.invalidateQueries({ queryKey: ["ticker-all"] });
     },
   });
+
 
   return (
     <div className="space-y-4">
@@ -208,31 +209,47 @@ function TickerAdmin() {
 
 
       <div className="rounded-xl border bg-card divide-y">
-        {(tokens ?? []).map((t: any) => (
-          <div key={t.id} className="p-3 flex items-center gap-2">
-            <Input
-              type="number" value={t.ordem} className="w-16"
-              onChange={(e) => updateToken.mutate({ id: t.id, ordem: parseInt(e.target.value) || 0 })}
-            />
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-mono truncate">{t.contract_address}</div>
-              <div className="text-xs text-muted-foreground">{t.chain}</div>
+        {(tokens ?? []).map((t: any) => {
+          const fixo = t.fonte === "coingecko";
+          return (
+            <div key={t.id} className="p-3 flex items-center gap-2">
+              <Input
+                type="number" value={t.ordem} className="w-16"
+                onChange={(e) => updateToken.mutate({ id: t.id, ordem: parseInt(e.target.value) || 0 })}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-mono truncate flex items-center gap-2">
+                  {fixo && (
+                    <span className="text-[10px] uppercase font-sans px-1.5 py-0.5 rounded bg-primary/20 text-primary">Fixo</span>
+                  )}
+                  {t.symbol ? `${t.symbol} — ` : ""}{t.contract_address}
+                </div>
+                <div className="text-xs text-muted-foreground">{t.chain} · {t.fonte}</div>
+              </div>
+              <Button
+                size="sm" variant={t.ativo ? "default" : "outline"}
+                onClick={() => updateToken.mutate({ id: t.id, ativo: !t.ativo })}
+              >
+                {t.ativo ? "Ativo" : "Inativo"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => {
+                const msg = fixo
+                  ? `Este é um token FIXO (${t.symbol}). Tem certeza que quer removê-lo do ticker? Recomenda-se apenas desativar.`
+                  : "Remover?";
+                if (!confirm(msg)) return;
+                if (fixo && !confirm(`Confirmar remoção definitiva de ${t.symbol}?`)) return;
+                deleteToken.mutate(t.id);
+              }}>
+                <Trash2 size={16} />
+              </Button>
             </div>
-            <Button
-              size="sm" variant={t.ativo ? "default" : "outline"}
-              onClick={() => updateToken.mutate({ id: t.id, ativo: !t.ativo })}
-            >
-              {t.ativo ? "Ativo" : "Inativo"}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => confirm("Remover?") && deleteToken.mutate(t.id)}>
-              <Trash2 size={16} />
-            </Button>
-          </div>
-        ))}
+          );
+        })}
         {(!tokens || tokens.length === 0) && (
           <div className="p-6 text-center text-sm text-muted-foreground">Nenhum token no ticker.</div>
         )}
       </div>
+
     </div>
   );
 }
