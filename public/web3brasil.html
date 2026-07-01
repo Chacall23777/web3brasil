@@ -813,13 +813,24 @@ function setupCrosshair(){
     const d = g.data[idx];
     setOHLC(d.o,d.h,d.l,d.c,d.v);
     const price = g.yMax - ((my-g.priceTop)/g.priceH)*(g.yMax-g.yMin);
+    // Etiqueta de preço no eixo direito
     if(my>=g.priceTop && my<=g.priceTop+g.priceH){
       ctx.fillStyle='#12181F'; ctx.strokeStyle='#8A93A3';
-      ctx.fillRect(g.padL-60, my-9, 56, 18); ctx.strokeRect(g.padL-60+.5, my-9+.5, 56, 18);
+      ctx.fillRect(W-g.padR+1, my-9, g.padR-2, 18); ctx.strokeRect(W-g.padR+1+.5, my-9+.5, g.padR-2, 18);
       ctx.fillStyle='#EDEFF2'; ctx.font='600 10px "IBM Plex Mono",monospace';
       ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(fmtBRL(price).replace('R$ ',''), g.padL-32, my);
+      ctx.fillText(Number(price).toLocaleString('pt-BR',{maximumFractionDigits: price<10?4: price<1000?2:0}), W-g.padR+g.padR/2, my);
     }
+    // Etiqueta de data no eixo inferior
+    const dt = new Date(d.t);
+    const label = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    ctx.font='600 10px "IBM Plex Mono",monospace';
+    const tw = ctx.measureText(label).width + 14;
+    const bx = Math.max(g.padL, Math.min(W-g.padR-tw, mx-tw/2));
+    ctx.fillStyle='#12181F'; ctx.strokeStyle='#8A93A3';
+    ctx.fillRect(bx, g.volTop+g.volH+2, tw, 18); ctx.strokeRect(bx+.5, g.volTop+g.volH+2+.5, tw, 18);
+    ctx.fillStyle='#EDEFF2'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(label, bx+tw/2, g.volTop+g.volH+11);
   };
   cross.addEventListener('mousemove', e=>{
     const r = cross.getBoundingClientRect();
