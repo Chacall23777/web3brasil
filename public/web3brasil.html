@@ -516,8 +516,10 @@ async function loadTicker(){
 loadTicker();
 setInterval(loadTicker,60000);
 
-/* ---------- Chart ---------- */
-let mainChart=null; let currentCoin='bitcoin';
+/* ---------- Chart (candlestick + volume, canvas puro) ---------- */
+let currentCoin='bitcoin';
+let currentTF=30;
+let currentCandles=[];
 const tabsEl = document.getElementById('coinTabs');
 COINS.slice(0,5).forEach(c=>{
   const b = document.createElement('button');
@@ -527,46 +529,190 @@ COINS.slice(0,5).forEach(c=>{
   b.onclick = ()=>{currentCoin=c.id; [...tabsEl.children].forEach(x=>x.classList.toggle('active',x.dataset.id===c.id)); loadChart();};
   tabsEl.appendChild(b);
 });
+document.querySelectorAll('#tfTabs .tf-tab').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('#tfTabs .tf-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    currentTF = parseInt(t.dataset.tf,10);
+    loadChart();
+  };
+});
+
+function setOHLC(o,h,l,c,v){
+  document.getElementById('oO').textContent = o!=null?fmtBRL(o):'—';
+  document.getElementById('oH').textContent = h!=null?fmtBRL(h):'—';
+  document.getElementById('oL').textContent = l!=null?fmtBRL(l):'—';
+  document.getElementById('oC').textContent = c!=null?fmtBRL(c):'—';
+  document.getElementById('oV').textContent = v ? Number(v).toLocaleString('pt-BR',{maximumFractionDigits:0}) : '—';
+}
+
+function drawCandles(){
+  const wrap = document.getElementById('chartWrap');
+  const cvs = document.getElementById('candleCanvas');
+  const cross = document.getElementById('crossCanvas');
+  const dpr = window.devicePixelRatio||1;
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  [cvs,cross].forEach(c=>{ c.width=W*dpr; c.height=H*dpr; });
+  const ctx = cvs.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  if(!currentCandles.length) return;
+
+  const padL=64, padR=14, padT=16, padB=28;
+  const volH = 70;
+  const priceH = H - padT - padB - volH - 8;
+  const priceTop = padT;
+  const volTop = padT + priceH + 8;
+
+  const data = currentCandles;
+  const hi = Math.max(...data.map(d=>d.h));
+  const lo = Math.min(...data.map(d=>d.l));
+  const range = hi-lo || 1;
+  const yPad = range*0.08;
+  const yMin = lo - yPad, yMax = hi + yPad;
+  const maxVol = Math.max(...data.map(d=>d.v||0), 1);
+
+  const yPrice = p => priceTop + (1 - (p-yMin)/(yMax-yMin)) * priceH;
+  const yVol = v => volTop + volH - (v/maxVol)*volH;
+
+  // background grid
+  ctx.strokeStyle='rgba(35,43,53,.5)'; ctx.lineWidth=1;
+  ctx.fillStyle='#8A93A3'; ctx.font='11px "IBM Plex Mono",monospace';
+  const gridSteps=5;
+  for(let i=0;i<=gridSteps;i++){
+    const y = priceTop + (priceH*i/gridSteps);
+    ctx.beginPath(); ctx.moveTo(padL,y+.5); ctx.lineTo(W-padR,y+.5); ctx.stroke();
+    const val = yMax - (yMax-yMin)*(i/gridSteps);
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillText('R$ '+Number(val).toLocaleString('pt-BR',{maximumFractionDigits: val<10?4: val<1000?2:0}), padL-8, y);
+  }
+  // vertical time grid
+  const nX = Math.min(6, data.length);
+  for(let i=0;i<=nX;i++){
+    const x = padL + ((W-padL-padR)*i/nX);
+    ctx.strokeStyle='rgba(35,43,53,.35)';
+    ctx.beginPath(); ctx.moveTo(x+.5,priceTop); ctx.lineTo(x+.5,volTop+volH); ctx.stroke();
+    const idx = Math.min(data.length-1, Math.round((data.length-1)*i/nX));
+    const dt = new Date(data[idx].t);
+    ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillStyle='#8A93A3';
+    ctx.fillText(dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}), x, volTop+volH+6);
+  }
+  // separator between price and volume
+  ctx.strokeStyle='rgba(35,43,53,.8)';
+  ctx.beginPath(); ctx.moveTo(padL, volTop-4); ctx.lineTo(W-padR, volTop-4); ctx.stroke();
+
+  // candles
+  const bodyW = Math.max(2, Math.floor((W-padL-padR)/data.length * 0.72));
+  const slot = (W-padL-padR)/data.length;
+  data.forEach((d,i)=>{
+    const cx = padL + slot*(i+0.5);
+    const up = d.c>=d.o;
+    const color = up ? '#35D07F' : '#FF4757';
+    ctx.strokeStyle=color; ctx.fillStyle=color;
+    // wick
+    ctx.beginPath();
+    ctx.moveTo(cx+.5, yPrice(d.h));
+    ctx.lineTo(cx+.5, yPrice(d.l));
+    ctx.lineWidth=1; ctx.stroke();
+    // body
+    const yO=yPrice(d.o), yC=yPrice(d.c);
+    const top=Math.min(yO,yC), bh=Math.max(1,Math.abs(yC-yO));
+    ctx.fillRect(cx-bodyW/2, top, bodyW, bh);
+    // volume bar
+    ctx.globalAlpha = 0.55;
+    ctx.fillRect(cx-bodyW/2, yVol(d.v||0), bodyW, (volTop+volH) - yVol(d.v||0));
+    ctx.globalAlpha = 1;
+  });
+
+  // right price label (last close)
+  const last = data[data.length-1];
+  const lastY = yPrice(last.c);
+  const lastColor = last.c>=last.o?'#35D07F':'#FF4757';
+  ctx.fillStyle=lastColor;
+  ctx.fillRect(W-padR-70, lastY-9, 70, 18);
+  ctx.fillStyle='#0B0F14'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='600 11px "IBM Plex Mono",monospace';
+  ctx.fillText(fmtBRL(last.c).replace('R$ ',''), W-padR-35, lastY);
+
+  // volume label
+  ctx.fillStyle='#8A93A3'; ctx.font='10px "IBM Plex Mono",monospace';
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText('VOL', padL+4, volTop+4);
+
+  // save geometry for crosshair
+  cvs._geom = {padL,padR,padT,padB,W,H,priceTop,priceH,volTop,volH,yMin,yMax,slot,data};
+}
+
+function setupCrosshair(){
+  const cross = document.getElementById('crossCanvas');
+  const cvs = document.getElementById('candleCanvas');
+  const draw = (mx,my)=>{
+    const dpr = window.devicePixelRatio||1;
+    const ctx = cross.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+    const W = cross.width/dpr, H = cross.height/dpr;
+    ctx.clearRect(0,0,W,H);
+    const g = cvs._geom; if(!g) return;
+    if(mx<g.padL||mx>W-g.padR||my<g.priceTop||my>g.volTop+g.volH) { setOHLC(); return; }
+    ctx.setLineDash([3,3]); ctx.strokeStyle='rgba(237,239,242,.35)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(mx+.5,g.priceTop); ctx.lineTo(mx+.5,g.volTop+g.volH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(g.padL,my+.5); ctx.lineTo(W-g.padR,my+.5); ctx.stroke();
+    ctx.setLineDash([]);
+    const idx = Math.min(g.data.length-1, Math.max(0, Math.floor((mx-g.padL)/g.slot)));
+    const d = g.data[idx];
+    setOHLC(d.o,d.h,d.l,d.c,d.v);
+    // price label
+    const price = g.yMax - ((my-g.priceTop)/g.priceH)*(g.yMax-g.yMin);
+    if(my>=g.priceTop && my<=g.priceTop+g.priceH){
+      ctx.fillStyle='#12181F'; ctx.strokeStyle='#8A93A3';
+      ctx.fillRect(g.padL-60, my-9, 56, 18); ctx.strokeRect(g.padL-60+.5, my-9+.5, 56, 18);
+      ctx.fillStyle='#EDEFF2'; ctx.font='600 10px "IBM Plex Mono",monospace';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(fmtBRL(price).replace('R$ ',''), g.padL-32, my);
+    }
+  };
+  cross.onmousemove = e=>{
+    const r = cross.getBoundingClientRect();
+    draw(e.clientX-r.left, e.clientY-r.top);
+  };
+  cross.onmouseleave = ()=>{
+    const ctx = cross.getContext('2d');
+    ctx.clearRect(0,0,cross.width,cross.height);
+    if(currentCandles.length){
+      const l = currentCandles[currentCandles.length-1];
+      setOHLC(l.o,l.h,l.l,l.c,l.v);
+    }
+  };
+}
+setupCrosshair();
+window.addEventListener('resize', ()=>{ drawCandles(); });
 
 async function loadChart(){
   const coin = COINS.find(c=>c.id===currentCoin);
-  document.getElementById('chartCoinName').textContent = coin.name + ' / BRL — 7 dias';
+  document.getElementById('chartCoinName').textContent = coin.name + ' / BRL — ' + currentTF + ' dias';
   document.getElementById('chartPrice').textContent = 'R$ …';
   document.getElementById('chartChange').textContent = '…';
+  setOHLC();
   try{
-    const prices = await fetchHistory(coin);
-    if(!prices || prices.length<2) throw new Error('sem dados');
-    const labels = prices.map(p=>new Date(p[0]).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}));
-    const values = prices.map(p=>p[1]);
-    const first = values[0], last = values[values.length-1];
+    const candles = await fetchHistory(coin, currentTF);
+    if(!candles || candles.length<2) throw new Error('sem dados');
+    currentCandles = candles.filter(d=>d.c>0);
+    const first = currentCandles[0].o, last = currentCandles[currentCandles.length-1].c;
     const change = ((last-first)/first)*100;
     document.getElementById('chartPrice').textContent = fmtBRL(last);
     const chEl = document.getElementById('chartChange');
-    chEl.textContent = fmtPct(change) + ' (7d)';
+    chEl.textContent = fmtPct(change) + ' (' + currentTF + 'd)';
     chEl.className = 'chart-change ' + (change>=0?'up':'down');
-
-    const canvas = document.getElementById('mainChart');
-    const ctx = canvas.getContext('2d');
-    const grad = ctx.createLinearGradient(0,0,0,340);
-    grad.addColorStop(0,'rgba(255,122,26,.35)');
-    grad.addColorStop(1,'rgba(255,122,26,0)');
-    if(mainChart){ mainChart.destroy(); mainChart=null; }
-    if(typeof Chart === 'undefined'){
-      document.getElementById('chartPrice').textContent = fmtBRL(last);
-      return;
-    }
-    mainChart = new Chart(ctx,{
-      type:'line',
-      data:{labels,datasets:[{data:values,borderColor:'#FF7A1A',backgroundColor:grad,borderWidth:2,fill:true,tension:.25,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#FF7A1A'}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#12181F',borderColor:'#232B35',borderWidth:1,titleColor:'#EDEFF2',bodyColor:'#EDEFF2',bodyFont:{family:'IBM Plex Mono'},callbacks:{label:c=>fmtBRL(c.parsed.y)}}},scales:{x:{ticks:{color:'#8A93A3',font:{family:'IBM Plex Mono',size:11}},grid:{color:'rgba(35,43,53,.6)'}},y:{ticks:{color:'#8A93A3',font:{family:'IBM Plex Mono',size:11},callback:v=>'R$ '+Number(v).toLocaleString('pt-BR',{maximumFractionDigits:0})},grid:{color:'rgba(35,43,53,.6)'}}}}
-    });
+    const l = currentCandles[currentCandles.length-1];
+    setOHLC(l.o,l.h,l.l,l.c,l.v);
+    drawCandles();
   }catch(e){
     console.warn('chart falhou', e);
     document.getElementById('chartPrice').textContent = 'Indisponível';
     document.getElementById('chartChange').textContent = '—';
+    currentCandles=[]; drawCandles();
   }
 }
 loadChart();
+
 
 /* ---------- Storage ----------
    Preferência: window.storage (Claude Artifact). Fallback: localStorage.
