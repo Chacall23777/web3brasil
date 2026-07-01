@@ -25,6 +25,8 @@ export type FeedPost = {
   token_contract: string | null;
   token_chain: string | null;
   token_link: string | null;
+  file_url?: string | null;
+  file_name?: string | null;
   created_at: string;
   profiles: {
     display_name: string;
