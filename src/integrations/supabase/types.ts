@@ -241,6 +241,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ticker_config: {
+        Row: {
+          id: number
+          speed_seconds: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          speed_seconds?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          speed_seconds?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ticker_tokens: {
+        Row: {
+          ativo: boolean
+          chain: string
+          contract_address: string
+          created_at: string
+          id: string
+          ordem: number
+        }
+        Insert: {
+          ativo?: boolean
+          chain?: string
+          contract_address: string
+          created_at?: string
+          id?: string
+          ordem?: number
+        }
+        Update: {
+          ativo?: boolean
+          chain?: string
+          contract_address?: string
+          created_at?: string
+          id?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
