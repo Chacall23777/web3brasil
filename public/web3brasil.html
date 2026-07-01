@@ -244,24 +244,38 @@ footer{padding:48px 0 40px;background:#080C10}
 <!-- CHART -->
 <section id="grafico">
   <div class="wrap">
-    <div class="eyebrow">// cotacao_ao_vivo</div>
+    <div class="eyebrow">// analise_tecnica</div>
     <div class="chart-head">
       <div>
-        <h2>Gráfico em tempo real</h2>
-        <p>Histórico de 7 dias em BRL, direto da CoinGecko. Escolha a moeda:</p>
+        <h2>Gráfico de análise em tempo real</h2>
+        <p>Candles diários em BRL — abertura, máxima, mínima e fechamento — com volume. Fonte: CryptoCompare, fallback CoinGecko.</p>
       </div>
       <div class="coin-tabs" role="tablist" id="coinTabs"></div>
     </div>
     <div class="chart-panel">
-      <div class="chart-meta">
-        <div>
-          <div class="stat-lbl" id="chartCoinName">—</div>
-          <div class="chart-price" id="chartPrice">R$ —</div>
+      <div class="chart-toolbar">
+        <div class="chart-meta">
+          <div>
+            <div class="stat-lbl" id="chartCoinName">—</div>
+            <div class="chart-price" id="chartPrice">R$ —</div>
+          </div>
+          <div class="chart-change" id="chartChange">—</div>
         </div>
-        <div class="chart-change" id="chartChange">—</div>
+        <div class="tf-tabs" id="tfTabs" role="tablist">
+          <button class="tf-tab" data-tf="7">7D</button>
+          <button class="tf-tab active" data-tf="30">30D</button>
+          <button class="tf-tab" data-tf="90">90D</button>
+          <button class="tf-tab" data-tf="180">6M</button>
+        </div>
       </div>
-      <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
-      <p class="chart-note">// Dados de referência via CoinGecko. Nada aqui é recomendação de compra ou venda.</p>
+      <div class="ohlc-strip" id="ohlcStrip">
+        <span>O <b id="oO">—</b></span><span>H <b id="oH">—</b></span><span>L <b id="oL">—</b></span><span>C <b id="oC">—</b></span><span>Vol <b id="oV">—</b></span>
+      </div>
+      <div class="chart-wrap" id="chartWrap">
+        <canvas id="candleCanvas"></canvas>
+        <canvas id="crossCanvas" class="crosshair"></canvas>
+      </div>
+      <p class="chart-note">// Dados de referência. Nada aqui é recomendação de compra ou venda.</p>
     </div>
   </div>
 </section>
