@@ -34,11 +34,154 @@ function AdminPage() {
           <TabsTrigger value="social">Redes sociais</TabsTrigger>
           <TabsTrigger value="team">Equipe</TabsTrigger>
           <TabsTrigger value="posts">Postagens</TabsTrigger>
+          <TabsTrigger value="ticker">Cotação (Ticker)</TabsTrigger>
         </TabsList>
         <TabsContent value="social" className="mt-4"><SocialForm /></TabsContent>
         <TabsContent value="team" className="mt-4"><TeamAdmin /></TabsContent>
         <TabsContent value="posts" className="mt-4"><PostsAdmin /></TabsContent>
+        <TabsContent value="ticker" className="mt-4"><TickerAdmin /></TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+const CHAINS = ["solana", "ethereum", "bsc", "polygon", "base", "arbitrum", "optimism", "avalanche"];
+
+function TickerAdmin() {
+  const qc = useQueryClient();
+  const { data: config } = useQuery({
+    queryKey: ["ticker_config_admin"],
+    queryFn: async () => (await supabase.from("ticker_config").select("*").eq("id", 1).maybeSingle()).data,
+  });
+  const { data: tokens } = useQuery({
+    queryKey: ["ticker_tokens_admin"],
+    queryFn: async () => (await supabase.from("ticker_tokens").select("*").order("ordem", { ascending: true })).data ?? [],
+  });
+
+  const [speed, setSpeed] = useState(15);
+  useEffect(() => { if (config?.speed_seconds) setSpeed(config.speed_seconds); }, [config]);
+
+  const saveSpeed = useMutation({
+    mutationFn: async (v: number) => {
+      const { error } = await supabase.from("ticker_config").upsert({ id: 1, speed_seconds: v, updated_at: new Date().toISOString() });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Velocidade atualizada");
+      qc.invalidateQueries({ queryKey: ["ticker_config"] });
+      qc.invalidateQueries({ queryKey: ["ticker_config_admin"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const [newAddr, setNewAddr] = useState("");
+  const [newChain, setNewChain] = useState("solana");
+
+  const addToken = useMutation({
+    mutationFn: async () => {
+      const addr = newAddr.trim();
+      if (!addr) throw new Error("Informe o endereço do contrato");
+      const nextOrder = (tokens?.length ?? 0);
+      const { error } = await supabase.from("ticker_tokens").insert({
+        contract_address: addr, chain: newChain, ordem: nextOrder, ativo: true,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setNewAddr("");
+      toast.success("Token adicionado");
+      qc.invalidateQueries({ queryKey: ["ticker_tokens_admin"] });
+      qc.invalidateQueries({ queryKey: ["ticker-listed"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updateToken = useMutation({
+    mutationFn: async (t: { id: string; ordem?: number; ativo?: boolean }) => {
+      const { id, ...rest } = t;
+      const { error } = await supabase.from("ticker_tokens").update(rest).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ticker_tokens_admin"] });
+      qc.invalidateQueries({ queryKey: ["ticker-listed"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteToken = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ticker_tokens").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Removido");
+      qc.invalidateQueries({ queryKey: ["ticker_tokens_admin"] });
+      qc.invalidateQueries({ queryKey: ["ticker-listed"] });
+    },
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <h3 className="font-semibold">Velocidade do ticker</h3>
+        <p className="text-xs text-muted-foreground">Duração de uma volta completa em segundos. Menor = mais rápido.</p>
+        <div className="flex items-center gap-3">
+          <input
+            type="range" min={5} max={60} step={1}
+            value={speed} onChange={(e) => setSpeed(parseInt(e.target.value))}
+            className="flex-1"
+          />
+          <Input
+            type="number" min={5} max={300} value={speed}
+            onChange={(e) => setSpeed(parseInt(e.target.value) || 15)}
+            className="w-24"
+          />
+          <span className="text-sm text-muted-foreground">s</span>
+          <Button onClick={() => saveSpeed.mutate(speed)} disabled={saveSpeed.isPending}>Salvar</Button>
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <h3 className="font-semibold">Adicionar token</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px_auto] gap-2">
+          <Input placeholder="Endereço do contrato" value={newAddr} onChange={(e) => setNewAddr(e.target.value)} />
+          <select
+            value={newChain} onChange={(e) => setNewChain(e.target.value)}
+            className="h-10 rounded-md border bg-background px-2 text-sm"
+          >
+            {CHAINS.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <Button onClick={() => addToken.mutate()} disabled={addToken.isPending}>Adicionar</Button>
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-card divide-y">
+        {(tokens ?? []).map((t: any) => (
+          <div key={t.id} className="p-3 flex items-center gap-2">
+            <Input
+              type="number" value={t.ordem} className="w-16"
+              onChange={(e) => updateToken.mutate({ id: t.id, ordem: parseInt(e.target.value) || 0 })}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-mono truncate">{t.contract_address}</div>
+              <div className="text-xs text-muted-foreground">{t.chain}</div>
+            </div>
+            <Button
+              size="sm" variant={t.ativo ? "default" : "outline"}
+              onClick={() => updateToken.mutate({ id: t.id, ativo: !t.ativo })}
+            >
+              {t.ativo ? "Ativo" : "Inativo"}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => confirm("Remover?") && deleteToken.mutate(t.id)}>
+              <Trash2 size={16} />
+            </Button>
+          </div>
+        ))}
+        {(!tokens || tokens.length === 0) && (
+          <div className="p-6 text-center text-sm text-muted-foreground">Nenhum token no ticker.</div>
+        )}
+      </div>
     </div>
   );
 }
