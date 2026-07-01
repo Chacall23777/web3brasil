@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Feed } from "@/components/Feed";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth-context";
+
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -13,6 +15,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const { user } = useAuth();
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 space-y-6">
       <section className="rounded-2xl border bg-gradient-to-br from-primary/10 to-transparent p-6 md:p-8">
@@ -22,10 +26,12 @@ function Home() {
         <p className="mt-2 text-muted-foreground max-w-xl">
           A comunidade brasileira de cripto. Poste ideias, divulgue projetos nacionais e acompanhe gráficos on-chain em tempo real.
         </p>
-        <div className="mt-4 flex gap-2">
-          <Link to="/comunidade"><Button>Ir para a comunidade</Button></Link>
-          <Link to="/auth"><Button variant="outline">Entrar com Google</Button></Link>
-        </div>
+        {!user && (
+          <div className="mt-4 flex gap-2">
+            <Link to="/comunidade"><Button>Ir para a comunidade</Button></Link>
+            <Link to="/auth"><Button variant="outline">Entrar com Google</Button></Link>
+          </div>
+        )}
       </section>
 
       <section>
