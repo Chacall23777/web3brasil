@@ -97,9 +97,13 @@ p{color:var(--muted);margin:0 0 16px}
 .chart-change{font-family:var(--mono);font-size:13px;font-weight:500;padding:4px 10px;border-radius:3px;border:1px solid var(--line)}
 .chart-change.up{color:var(--up);border-color:#1B4130;background:rgba(53,208,127,.08)}
 .chart-change.down{color:var(--down);border-color:#4A1E22;background:rgba(255,71,87,.08)}
-.tf-tabs{display:flex;gap:4px;background:var(--panel2);padding:3px;border-radius:5px;border:1px solid var(--line)}
-.tf-tab{padding:5px 12px;border:0;background:transparent;color:var(--muted);border-radius:3px;font-family:var(--mono);font-size:12px;cursor:pointer;font-weight:600}
-.tf-tab.active{background:var(--panel);color:var(--brand)}
+.tf-tabs,.ind-tabs{display:flex;gap:4px;background:var(--panel2);padding:3px;border-radius:5px;border:1px solid var(--line);flex-wrap:wrap}
+.tf-tab,.ind-tab{padding:5px 12px;border:0;background:transparent;color:var(--muted);border-radius:3px;font-family:var(--mono);font-size:12px;cursor:pointer;font-weight:600}
+.tf-tab.active,.ind-tab.active{background:var(--panel);color:var(--brand)}
+.ind-tab{font-size:11px;padding:5px 10px}
+.ind-tab[data-ind=sma20].active{color:#4FC3F7}
+.ind-tab[data-ind=ema50].active{color:#FFB74D}
+.ind-tab[data-ind=bb].active{color:#BA68C8}
 .ohlc-strip{display:flex;flex-wrap:wrap;gap:18px;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:8px}
 .ohlc-strip b{color:var(--text);font-weight:500;margin-left:6px}
 .chart-wrap{position:relative;width:100%;height:440px;background:#0A0E13;border:1px solid var(--line);border-radius:4px;overflow:hidden}
