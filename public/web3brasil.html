@@ -90,11 +90,21 @@ p{color:var(--muted);margin:0 0 16px}
 .coin-tabs{display:flex;gap:6px;flex-wrap:wrap}
 .coin-tab{padding:8px 14px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:4px;font-family:var(--mono);font-size:13px;cursor:pointer;font-weight:500}
 .coin-tab.active{border-color:var(--brand);color:var(--text);background:var(--panel2)}
-.chart-panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:24px}
-.chart-meta{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:16px;margin-bottom:18px}
-.chart-price{font-family:var(--mono);font-size:32px;font-weight:600}
-.chart-change{font-family:var(--mono);font-size:14px;font-weight:500;padding:4px 10px;border-radius:3px;border:1px solid var(--line)}
-.chart-wrap{position:relative;height:340px}
+.chart-panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px}
+.chart-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.chart-meta{display:flex;align-items:baseline;flex-wrap:wrap;gap:14px}
+.chart-price{font-family:var(--mono);font-size:30px;font-weight:600;letter-spacing:-.01em}
+.chart-change{font-family:var(--mono);font-size:13px;font-weight:500;padding:4px 10px;border-radius:3px;border:1px solid var(--line)}
+.chart-change.up{color:var(--up);border-color:#1B4130;background:rgba(53,208,127,.08)}
+.chart-change.down{color:var(--down);border-color:#4A1E22;background:rgba(255,71,87,.08)}
+.tf-tabs{display:flex;gap:4px;background:var(--panel2);padding:3px;border-radius:5px;border:1px solid var(--line)}
+.tf-tab{padding:5px 12px;border:0;background:transparent;color:var(--muted);border-radius:3px;font-family:var(--mono);font-size:12px;cursor:pointer;font-weight:600}
+.tf-tab.active{background:var(--panel);color:var(--brand)}
+.ohlc-strip{display:flex;flex-wrap:wrap;gap:18px;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:8px}
+.ohlc-strip b{color:var(--text);font-weight:500;margin-left:6px}
+.chart-wrap{position:relative;width:100%;height:440px;background:#0A0E13;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.chart-wrap canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.chart-wrap canvas.crosshair{cursor:crosshair;z-index:2}
 .chart-note{margin-top:14px;font-size:12px;color:var(--muted);font-family:var(--mono)}
 
 /* ---------- PROJECTS ---------- */
@@ -103,6 +113,8 @@ p{color:var(--muted);margin:0 0 16px}
 @media(max-width:600px){.grid{grid-template-columns:1fr}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:12px;transition:border-color .15s}
 .card:hover{border-color:#2E3946}
+.card-img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:4px;background:var(--panel2);border:1px solid var(--line);display:block}
+.card-img-ph{width:100%;aspect-ratio:16/9;border-radius:4px;background:linear-gradient(135deg,var(--panel2),#0B1218);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:32px;color:var(--brand);letter-spacing:.02em}
 .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .token-name{font-family:var(--display);font-weight:700;font-size:17px}
 .token-chain{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.08em}
@@ -115,6 +127,7 @@ p{color:var(--muted);margin:0 0 16px}
 .spark{width:100px;height:32px}
 .example-badge{display:inline-block;font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:6px;padding:2px 6px;border:1px dashed var(--line);border-radius:3px}
 .empty{grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;border:1px dashed var(--line);border-radius:6px}
+.img-preview{margin-top:8px;max-height:120px;border-radius:4px;border:1px solid var(--line);object-fit:contain;background:var(--bg)}
 
 /* ---------- SUBMIT ---------- */
 .submit-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:48px;align-items:start}
