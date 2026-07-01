@@ -64,16 +64,41 @@ export function NewPostForm() {
     setTName(""); setTSymbol(""); setTChain("solana"); setTImage(null);
   };
 
+  const uploadFile = async (): Promise<{ url: string; name: string } | null> => {
+    if (!file || !user) return null;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "pdf";
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("post-files").upload(path, file, {
+        contentType: file.type || "application/pdf",
+        upsert: false,
+      });
+      if (upErr) throw upErr;
+      const { data: signed, error: sErr } = await supabase.storage
+        .from("post-files")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      if (sErr || !signed) throw sErr ?? new Error("Falha ao gerar link");
+      return { url: signed.signedUrl, name: file.name };
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const submit = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Entre para postar");
+      if (file && file.size > MAX_PDF_MB * 1024 * 1024) throw new Error(`Arquivo maior que ${MAX_PDF_MB}MB`);
+      const uploaded = await uploadFile();
       if (tab === "text") {
-        if (!content.trim()) throw new Error("Escreva algo");
+        if (!content.trim() && !uploaded) throw new Error("Escreva algo ou envie um arquivo");
         const { error } = await supabase.from("posts").insert({
           user_id: user.id, type: "text",
           title: title.trim() || null,
           content: content.trim(),
           image_url: image,
+          file_url: uploaded?.url ?? null,
+          file_name: uploaded?.name ?? null,
         });
         if (error) throw error;
       } else {
@@ -89,13 +114,15 @@ export function NewPostForm() {
           token_link: tLink.trim() || null,
           image_url: tImage,
           content: tContent.trim() || null,
+          file_url: uploaded?.url ?? null,
+          file_name: uploaded?.name ?? null,
         });
         if (error) throw error;
       }
     },
     onSuccess: () => {
       toast.success("Postado!");
-      setTitle(""); setContent(""); setImage(null);
+      setTitle(""); setContent(""); setImage(null); setFile(null);
       setTName(""); setTSymbol(""); setTContract(""); setTLink(""); setTImage(null); setTContent(""); setFetched(false);
       qc.invalidateQueries({ queryKey: ["feed"] });
     },
