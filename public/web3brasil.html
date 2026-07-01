@@ -1050,6 +1050,7 @@ document.getElementById('directForm').addEventListener('submit', async e=>{
     status: document.getElementById('d_status').value,
     link: document.getElementById('d_link').value.trim(),
     desc: document.getElementById('d_desc').value.trim(),
+    image: null,
     createdAt: Date.now(),
   };
   if(!item.name||!item.chain||!item.link||!item.desc){
@@ -1059,13 +1060,26 @@ document.getElementById('directForm').addEventListener('submit', async e=>{
     msg.style.display='block'; msg.className='form-msg err';
     msg.textContent='Armazenamento não disponível neste ambiente.'; return;
   }
-  msg.style.display='block'; msg.className='form-msg'; msg.textContent='Publicando…';
+  msg.style.display='block'; msg.className='form-msg'; msg.textContent='Processando imagem…';
+  try{
+    const file = document.getElementById('d_image').files[0];
+    if(file) item.image = await readImageAsDataURL(file);
+  }catch(err){
+    msg.className='form-msg err'; msg.textContent = err.message || 'Falha ao processar imagem.'; return;
+  }
+  msg.textContent='Publicando…';
   const published = await sGet(K_PUBLISHED);
   if(published===null){ msg.className='form-msg err'; msg.textContent='Falha ao carregar publicados.'; return; }
   published.unshift(item);
   const ok = await sSet(K_PUBLISHED, published);
-  if(ok){ msg.className='form-msg ok'; msg.textContent='Projeto publicado no radar.'; e.target.reset(); renderAdmin(); renderProjects(); }
-  else { msg.className='form-msg err'; msg.textContent='Falha ao publicar.'; }
+  if(ok){
+    msg.className='form-msg ok'; msg.textContent='Projeto publicado no radar.';
+    e.target.reset();
+    document.getElementById('d_image_preview').style.display='none';
+    renderAdmin(); renderProjects();
+  } else {
+    msg.className='form-msg err'; msg.textContent='Falha ao publicar.';
+  }
 });
 
 
