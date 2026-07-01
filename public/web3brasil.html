@@ -587,6 +587,59 @@ function clampView(){
   if(viewStart < 0) viewStart = 0;
 }
 
+/* Helpers de indicadores — recebem série completa de closes; retornam array com mesmo tamanho (null onde não há valor). */
+function calcSMA(arr, period){
+  const out = new Array(arr.length).fill(null);
+  let sum = 0;
+  for(let i=0;i<arr.length;i++){
+    sum += arr[i];
+    if(i>=period) sum -= arr[i-period];
+    if(i>=period-1) out[i] = sum/period;
+  }
+  return out;
+}
+function calcEMA(arr, period){
+  const out = new Array(arr.length).fill(null);
+  const k = 2/(period+1);
+  let ema = null;
+  for(let i=0;i<arr.length;i++){
+    if(i<period-1) continue;
+    if(ema===null){
+      let s=0; for(let j=i-period+1;j<=i;j++) s+=arr[j];
+      ema = s/period;
+    } else {
+      ema = arr[i]*k + ema*(1-k);
+    }
+    out[i] = ema;
+  }
+  return out;
+}
+function calcBB(arr, period, mult){
+  const sma = calcSMA(arr, period);
+  const upper = new Array(arr.length).fill(null);
+  const lower = new Array(arr.length).fill(null);
+  for(let i=period-1;i<arr.length;i++){
+    let s=0; for(let j=i-period+1;j<=i;j++){ const d=arr[j]-sma[i]; s+=d*d; }
+    const sd = Math.sqrt(s/period);
+    upper[i] = sma[i] + mult*sd;
+    lower[i] = sma[i] - mult*sd;
+  }
+  return {mid:sma, upper, lower};
+}
+
+function drawSeries(ctx, values, x0, slot, yFn, color, width){
+  ctx.strokeStyle = color; ctx.lineWidth = width || 1.5;
+  ctx.beginPath();
+  let started = false;
+  for(let i=0;i<values.length;i++){
+    const v = values[i]; if(v==null || !isFinite(v)) { started=false; continue; }
+    const x = x0 + slot*(i+0.5);
+    const y = yFn(v);
+    if(!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
 function drawCandles(){
   const wrap = document.getElementById('chartWrap');
   const cvs = document.getElementById('candleCanvas');
@@ -604,14 +657,26 @@ function drawCandles(){
   const data = currentCandles.slice(startIdx, endIdx);
   if(!data.length) return;
 
-  const padL=64, padR=14, padT=16, padB=28;
-  const volH = 70;
+  // Eixo de preço à direita (estilo TradingView)
+  const padL=14, padR=72, padT=16, padB=28;
+  const volH = 80;
   const priceH = H - padT - padB - volH - 8;
   const priceTop = padT;
   const volTop = padT + priceH + 8;
 
-  const hi = Math.max(...data.map(d=>d.h));
-  const lo = Math.min(...data.map(d=>d.l));
+  // Indicadores calculados sobre closes do slice visível
+  const closes = data.map(d=>d.c);
+  const sma20 = indicators.sma20 ? calcSMA(closes,20) : null;
+  const ema50 = indicators.ema50 ? calcEMA(closes,50) : null;
+  const bb    = indicators.bb    ? calcBB(closes,20,2) : null;
+
+  // Range de preço considerando também overlays visíveis
+  let hi = Math.max(...data.map(d=>d.h));
+  let lo = Math.min(...data.map(d=>d.l));
+  if(bb){
+    for(const v of bb.upper) if(v!=null && v>hi) hi=v;
+    for(const v of bb.lower) if(v!=null && v<lo) lo=v;
+  }
   const range = hi-lo || 1;
   const yPad = range*0.08;
   const yMin = lo - yPad, yMax = hi + yPad;
@@ -620,19 +685,19 @@ function drawCandles(){
   const yPrice = p => priceTop + (1 - (p-yMin)/(yMax-yMin)) * priceH;
   const yVol = v => volTop + volH - (v/maxVol)*volH;
 
-  // background grid
+  // Grade horizontal + eixo à direita
   ctx.strokeStyle='rgba(35,43,53,.5)'; ctx.lineWidth=1;
   ctx.fillStyle='#8A93A3'; ctx.font='11px "IBM Plex Mono",monospace';
-  const gridSteps=5;
+  const gridSteps=6;
   for(let i=0;i<=gridSteps;i++){
     const y = priceTop + (priceH*i/gridSteps);
     ctx.beginPath(); ctx.moveTo(padL,y+.5); ctx.lineTo(W-padR,y+.5); ctx.stroke();
     const val = yMax - (yMax-yMin)*(i/gridSteps);
-    ctx.textAlign='right'; ctx.textBaseline='middle';
-    ctx.fillText('R$ '+Number(val).toLocaleString('pt-BR',{maximumFractionDigits: val<10?4: val<1000?2:0}), padL-8, y);
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(Number(val).toLocaleString('pt-BR',{maximumFractionDigits: val<10?4: val<1000?2:0}), W-padR+8, y);
   }
-  // vertical time grid
-  const nX = Math.min(6, data.length);
+  // Grade vertical + rótulos de data
+  const nX = Math.min(8, data.length);
   for(let i=0;i<=nX;i++){
     const x = padL + ((W-padL-padR)*i/nX);
     ctx.strokeStyle='rgba(35,43,53,.35)';
@@ -642,17 +707,17 @@ function drawCandles(){
     ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillStyle='#8A93A3';
     ctx.fillText(dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}), x, volTop+volH+6);
   }
-  // separator between price and volume
+  // separador preço / volume
   ctx.strokeStyle='rgba(35,43,53,.8)';
   ctx.beginPath(); ctx.moveTo(padL, volTop-4); ctx.lineTo(W-padR, volTop-4); ctx.stroke();
 
-  // candles
+  // Candles + volume
   const slot = (W-padL-padR)/data.length;
   const bodyW = Math.max(2, Math.floor(slot * 0.72));
   data.forEach((d,i)=>{
     const cx = padL + slot*(i+0.5);
     const up = d.c>=d.o;
-    const color = up ? '#35D07F' : '#FF4757';
+    const color = up ? '#26A69A' : '#EF5350';
     ctx.strokeStyle=color; ctx.fillStyle=color;
     ctx.beginPath();
     ctx.moveTo(cx+.5, yPrice(d.h));
@@ -661,30 +726,71 @@ function drawCandles(){
     const yO=yPrice(d.o), yC=yPrice(d.c);
     const top=Math.min(yO,yC), bh=Math.max(1,Math.abs(yC-yO));
     ctx.fillRect(cx-bodyW/2, top, bodyW, bh);
-    ctx.globalAlpha = 0.55;
+    ctx.globalAlpha = 0.5;
     ctx.fillRect(cx-bodyW/2, yVol(d.v||0), bodyW, (volTop+volH) - yVol(d.v||0));
     ctx.globalAlpha = 1;
   });
 
-  // right price label (last close)
+  // Bandas de Bollinger (fundo suave + linhas)
+  if(bb){
+    ctx.fillStyle='rgba(186,104,200,.06)';
+    ctx.beginPath();
+    let started=false;
+    for(let i=0;i<bb.upper.length;i++){
+      const v=bb.upper[i]; if(v==null){continue;}
+      const x = padL + slot*(i+0.5);
+      if(!started){ctx.moveTo(x,yPrice(v));started=true;} else ctx.lineTo(x,yPrice(v));
+    }
+    for(let i=bb.lower.length-1;i>=0;i--){
+      const v=bb.lower[i]; if(v==null){continue;}
+      const x = padL + slot*(i+0.5);
+      ctx.lineTo(x,yPrice(v));
+    }
+    ctx.closePath(); ctx.fill();
+    drawSeries(ctx, bb.upper, padL, slot, yPrice, 'rgba(186,104,200,.7)', 1);
+    drawSeries(ctx, bb.lower, padL, slot, yPrice, 'rgba(186,104,200,.7)', 1);
+    drawSeries(ctx, bb.mid,   padL, slot, yPrice, 'rgba(186,104,200,.9)', 1);
+  }
+  if(sma20) drawSeries(ctx, sma20, padL, slot, yPrice, '#4FC3F7', 1.6);
+  if(ema50) drawSeries(ctx, ema50, padL, slot, yPrice, '#FFB74D', 1.6);
+
+  // Linha horizontal de preço atual + etiqueta no eixo direito
   const last = data[data.length-1];
   const lastY = yPrice(last.c);
-  const lastColor = last.c>=last.o?'#35D07F':'#FF4757';
+  const lastColor = last.c>=last.o?'#26A69A':'#EF5350';
+  ctx.setLineDash([2,3]); ctx.strokeStyle=lastColor; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(padL,lastY+.5); ctx.lineTo(W-padR,lastY+.5); ctx.stroke();
+  ctx.setLineDash([]);
   ctx.fillStyle=lastColor;
-  ctx.fillRect(W-padR-70, lastY-9, 70, 18);
+  ctx.fillRect(W-padR+1, lastY-9, padR-2, 18);
   ctx.fillStyle='#0B0F14'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.font='600 11px "IBM Plex Mono",monospace';
-  ctx.fillText(fmtBRL(last.c).replace('R$ ',''), W-padR-35, lastY);
+  ctx.fillText(Number(last.c).toLocaleString('pt-BR',{maximumFractionDigits: last.c<10?4: last.c<1000?2:0}), W-padR+padR/2, lastY);
 
-  // volume label + hint
+  // Rótulos e dica
   ctx.fillStyle='#8A93A3'; ctx.font='10px "IBM Plex Mono",monospace';
   ctx.textAlign='left'; ctx.textBaseline='top';
   ctx.fillText('VOL', padL+4, volTop+4);
   ctx.textAlign='right';
-  ctx.fillText('SCROLL: zoom  ·  ARRASTAR: mover  ·  DUPLO-CLIQUE: reset', W-padR-4, priceTop+4);
+  ctx.fillText('Rolar: zoom  ·  Arrastar: mover  ·  Duplo clique: resetar', W-padR-4, priceTop+4);
+
+  // Legenda de indicadores ativos
+  const legend = [];
+  if(sma20) legend.push(['MMS 20','#4FC3F7']);
+  if(ema50) legend.push(['MME 50','#FFB74D']);
+  if(bb)    legend.push(['BB(20,2)','#BA68C8']);
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  let lx = padL+4, ly = priceTop+4;
+  legend.forEach(([lbl,col])=>{
+    ctx.fillStyle=col; ctx.fillRect(lx,ly+3,10,2);
+    ctx.fillStyle='#EDEFF2'; ctx.fillText(lbl, lx+14, ly);
+    lx += ctx.measureText(lbl).width + 34;
+  });
 
   cvs._geom = {padL,padR,padT,padB,W,H,priceTop,priceH,volTop,volH,yMin,yMax,slot,data};
 }
+
+
 
 
 function setupCrosshair(){
