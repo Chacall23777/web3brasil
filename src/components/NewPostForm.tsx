@@ -91,7 +91,7 @@ export function NewPostForm() {
     onSuccess: () => {
       toast.success("Postado!");
       setTitle(""); setContent(""); setImage(null);
-      setTName(""); setTSymbol(""); setTContract(""); setTLink(""); setTImage(null); setTContent("");
+      setTName(""); setTSymbol(""); setTContract(""); setTLink(""); setTImage(null); setTContent(""); setFetched(false);
       qc.invalidateQueries({ queryKey: ["feed"] });
     },
     onError: (e: Error) => toast.error(e.message),
