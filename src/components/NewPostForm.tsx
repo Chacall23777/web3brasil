@@ -73,7 +73,8 @@ export function NewPostForm() {
         });
         if (error) throw error;
       } else {
-        if (!tName.trim() || !tSymbol.trim() || !tContract.trim()) throw new Error("Nome, símbolo e contrato são obrigatórios");
+        if (!fetched) throw new Error("Clique em Buscar para carregar as informações do token");
+        if (!tName.trim() || !tSymbol.trim() || !tContract.trim()) throw new Error("Contrato inválido ou token não encontrado");
         if (!normalizeChain(tChain)) throw new Error("Rede não suportada pelo gráfico");
         const { error } = await supabase.from("posts").insert({
           user_id: user.id, type: "token",
