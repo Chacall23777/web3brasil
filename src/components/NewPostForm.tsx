@@ -13,7 +13,7 @@ import { lookupToken } from "@/lib/token-lookup";
 import { Link } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 
-const CHAINS = ["solana", "ethereum", "bsc", "polygon", "base", "arbitrum", "optimism", "avalanche"];
+
 
 export function NewPostForm() {
   const { user } = useAuth();
