@@ -10,7 +10,32 @@ type TickerItem = {
   image?: string | null;
 };
 
-async function fetchListedTokens(): Promise<TickerItem[]> {
+const MAJORS = [
+  { id: "bitcoin", symbol: "BTC" },
+  { id: "ethereum", symbol: "ETH" },
+  { id: "solana", symbol: "SOL" },
+  { id: "binancecoin", symbol: "BNB" },
+];
+
+async function fetchMajors(): Promise<TickerItem[]> {
+  try {
+    const ids = MAJORS.map((m) => m.id).join(",");
+    const r = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl&include_24hr_change=true`,
+    );
+    const j = await r.json();
+    return MAJORS.map((m) => ({
+      key: m.symbol,
+      symbol: m.symbol,
+      priceBrl: j?.[m.id]?.brl ?? null,
+      change24h: j?.[m.id]?.brl_24h_change ?? null,
+    }));
+  } catch {
+    return MAJORS.map((m) => ({ key: m.symbol, symbol: m.symbol, priceBrl: null, change24h: null }));
+  }
+}
+
+
   const { data } = await supabase
     .from("ticker_tokens")
     .select("contract_address")
