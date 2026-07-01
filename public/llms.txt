@@ -1,0 +1,9 @@
+# WEB3BRASIL
+
+> Comunidade brasileira de cripto focada em divulgar projetos, lançamentos e pré-vendas de tokens nacionais, com cotações ao vivo em BRL.
+
+WEB3BRASIL é um radar independente da cena cripto BR. A página inicial mostra ticker ao vivo (BTC, ETH, BNB, SOL, POL, XRP em BRL via CoinGecko), gráfico 7 dias, grade de projetos submetidos pela comunidade e formulário aberto para submissão.
+
+## Pages
+
+- [Home](/): Radar principal com ticker, gráfico, projetos e formulário de submissão.
