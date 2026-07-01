@@ -552,6 +552,19 @@ function setOHLC(o,h,l,c,v){
   document.getElementById('oV').textContent = v ? Number(v).toLocaleString('pt-BR',{maximumFractionDigits:0}) : '—';
 }
 
+/* interactive viewport: which slice of currentCandles is visible */
+let viewStart = 0;   // fractional start index for smooth pan
+let viewCount = 0;   // number of candles visible
+
+function clampView(){
+  if(!currentCandles.length){ viewStart=0; viewCount=0; return; }
+  const N = currentCandles.length;
+  viewCount = Math.max(6, Math.min(N, Math.round(viewCount||N)));
+  const maxStart = N - viewCount;
+  if(viewStart > maxStart) viewStart = maxStart;
+  if(viewStart < 0) viewStart = 0;
+}
+
 function drawCandles(){
   const wrap = document.getElementById('chartWrap');
   const cvs = document.getElementById('candleCanvas');
@@ -563,13 +576,18 @@ function drawCandles(){
   ctx.clearRect(0,0,W,H);
   if(!currentCandles.length) return;
 
+  clampView();
+  const startIdx = Math.floor(viewStart);
+  const endIdx = Math.min(currentCandles.length, startIdx + viewCount);
+  const data = currentCandles.slice(startIdx, endIdx);
+  if(!data.length) return;
+
   const padL=64, padR=14, padT=16, padB=28;
   const volH = 70;
   const priceH = H - padT - padB - volH - 8;
   const priceTop = padT;
   const volTop = padT + priceH + 8;
 
-  const data = currentCandles;
   const hi = Math.max(...data.map(d=>d.h));
   const lo = Math.min(...data.map(d=>d.l));
   const range = hi-lo || 1;
@@ -607,23 +625,20 @@ function drawCandles(){
   ctx.beginPath(); ctx.moveTo(padL, volTop-4); ctx.lineTo(W-padR, volTop-4); ctx.stroke();
 
   // candles
-  const bodyW = Math.max(2, Math.floor((W-padL-padR)/data.length * 0.72));
   const slot = (W-padL-padR)/data.length;
+  const bodyW = Math.max(2, Math.floor(slot * 0.72));
   data.forEach((d,i)=>{
     const cx = padL + slot*(i+0.5);
     const up = d.c>=d.o;
     const color = up ? '#35D07F' : '#FF4757';
     ctx.strokeStyle=color; ctx.fillStyle=color;
-    // wick
     ctx.beginPath();
     ctx.moveTo(cx+.5, yPrice(d.h));
     ctx.lineTo(cx+.5, yPrice(d.l));
     ctx.lineWidth=1; ctx.stroke();
-    // body
     const yO=yPrice(d.o), yC=yPrice(d.c);
     const top=Math.min(yO,yC), bh=Math.max(1,Math.abs(yC-yO));
     ctx.fillRect(cx-bodyW/2, top, bodyW, bh);
-    // volume bar
     ctx.globalAlpha = 0.55;
     ctx.fillRect(cx-bodyW/2, yVol(d.v||0), bodyW, (volTop+volH) - yVol(d.v||0));
     ctx.globalAlpha = 1;
@@ -639,14 +654,16 @@ function drawCandles(){
   ctx.font='600 11px "IBM Plex Mono",monospace';
   ctx.fillText(fmtBRL(last.c).replace('R$ ',''), W-padR-35, lastY);
 
-  // volume label
+  // volume label + hint
   ctx.fillStyle='#8A93A3'; ctx.font='10px "IBM Plex Mono",monospace';
   ctx.textAlign='left'; ctx.textBaseline='top';
   ctx.fillText('VOL', padL+4, volTop+4);
+  ctx.textAlign='right';
+  ctx.fillText('SCROLL: zoom  ·  ARRASTAR: mover  ·  DUPLO-CLIQUE: reset', W-padR-4, priceTop+4);
 
-  // save geometry for crosshair
   cvs._geom = {padL,padR,padT,padB,W,H,priceTop,priceH,volTop,volH,yMin,yMax,slot,data};
 }
+
 
 function setupCrosshair(){
   const cross = document.getElementById('crossCanvas');
