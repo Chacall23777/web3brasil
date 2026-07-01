@@ -472,16 +472,21 @@ async function fetchPrices(){
   return j;
 }
 
-async function fetchHistory(coin){
-  // CryptoCompare histoday: [{time, close}]
+async function fetchHistory(coin, days){
+  // CryptoCompare histoday: OHLCV
   try{
-    const j = await fetchJSON(`https://min-api.cryptocompare.com/data/v2/histoday?fsym=${coin.cc}&tsym=BRL&limit=7`);
+    const j = await fetchJSON(`https://min-api.cryptocompare.com/data/v2/histoday?fsym=${coin.cc}&tsym=BRL&limit=${days}`);
     if(!j || !j.Data || !j.Data.Data) throw new Error('shape');
-    return j.Data.Data.map(d=>[d.time*1000, d.close]);
+    return j.Data.Data.map(d=>({t:d.time*1000, o:d.open, h:d.high, l:d.low, c:d.close, v:d.volumeto}));
   }catch(_){}
-  // Fallback: CoinGecko
-  const j = await fetchJSON(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=brl&days=7&interval=daily`);
-  return j.prices;
+  // Fallback: CoinGecko (só close) — sintetiza OHLC simples
+  const j = await fetchJSON(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=brl&days=${days}&interval=daily`);
+  const prices = j.prices || [];
+  return prices.map((p,i)=>{
+    const prev = prices[i-1] ? prices[i-1][1] : p[1];
+    const o = prev, c = p[1];
+    return {t:p[0], o, h:Math.max(o,c), l:Math.min(o,c), c, v:0};
+  });
 }
 
 /* ---------- Ticker ---------- */
