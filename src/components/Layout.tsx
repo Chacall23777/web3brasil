@@ -16,10 +16,10 @@ export function Layout() {
   });
 
   const socials = [
-    { url: social?.x_url, Icon: XIcon, label: "X" },
-    { url: social?.telegram_url, Icon: TelegramIcon, label: "Telegram" },
-    { url: social?.whatsapp_url, Icon: WhatsappIcon, label: "WhatsApp" },
-    { url: social?.instagram_url, Icon: InstagramIcon, label: "Instagram" },
+    { url: social?.x_url, Icon: XIcon, label: "X", bg: "bg-black text-white hover:bg-black/85" },
+    { url: social?.telegram_url, Icon: TelegramIcon, label: "Telegram", bg: "bg-[#229ED9] text-white hover:bg-[#1c8ec4]" },
+    { url: social?.whatsapp_url, Icon: WhatsappIcon, label: "WhatsApp", bg: "bg-[#25D366] text-white hover:bg-[#1ebe5a]" },
+    { url: social?.instagram_url, Icon: InstagramIcon, label: "Instagram", bg: "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white hover:opacity-90" },
   ];
 
   return (
@@ -38,11 +38,11 @@ export function Layout() {
             )}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-1">
-              {socials.map(({ url, Icon, label }) =>
+            <div className="hidden sm:flex items-center gap-1.5">
+              {socials.map(({ url, Icon, label, bg }) =>
                 url ? (
-                  <a key={label} href={url} target="_blank" rel="noopener noreferrer" aria-label={label} className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-primary">
-                    <Icon width={18} height={18} />
+                  <a key={label} href={url} target="_blank" rel="noopener noreferrer" aria-label={label} className={`h-8 w-8 rounded-full flex items-center justify-center shadow-sm transition ${bg}`}>
+                    <Icon width={16} height={16} />
                   </a>
                 ) : null,
               )}
@@ -80,10 +80,10 @@ export function Layout() {
         <div className="mx-auto max-w-6xl px-4 py-8 flex flex-col md:flex-row gap-4 items-center justify-between text-sm text-muted-foreground">
           <div>© {new Date().getFullYear()} WEB3BRASIL — comunidade cripto BR.</div>
           <div className="flex items-center gap-2">
-            {socials.map(({ url, Icon, label }) =>
+            {socials.map(({ url, Icon, label, bg }) =>
               url ? (
-                <a key={label} href={url} target="_blank" rel="noopener noreferrer" aria-label={label} className="p-2 rounded-md hover:bg-muted hover:text-primary">
-                  <Icon width={20} height={20} />
+                <a key={label} href={url} target="_blank" rel="noopener noreferrer" aria-label={label} className={`h-9 w-9 rounded-full flex items-center justify-center shadow-sm transition ${bg}`}>
+                  <Icon width={18} height={18} />
                 </a>
               ) : null,
             )}
