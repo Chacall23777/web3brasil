@@ -552,6 +552,19 @@ function setOHLC(o,h,l,c,v){
   document.getElementById('oV').textContent = v ? Number(v).toLocaleString('pt-BR',{maximumFractionDigits:0}) : '—';
 }
 
+/* interactive viewport: which slice of currentCandles is visible */
+let viewStart = 0;   // fractional start index for smooth pan
+let viewCount = 0;   // number of candles visible
+
+function clampView(){
+  if(!currentCandles.length){ viewStart=0; viewCount=0; return; }
+  const N = currentCandles.length;
+  viewCount = Math.max(6, Math.min(N, Math.round(viewCount||N)));
+  const maxStart = N - viewCount;
+  if(viewStart > maxStart) viewStart = maxStart;
+  if(viewStart < 0) viewStart = 0;
+}
+
 function drawCandles(){
   const wrap = document.getElementById('chartWrap');
   const cvs = document.getElementById('candleCanvas');
@@ -563,13 +576,18 @@ function drawCandles(){
   ctx.clearRect(0,0,W,H);
   if(!currentCandles.length) return;
 
+  clampView();
+  const startIdx = Math.floor(viewStart);
+  const endIdx = Math.min(currentCandles.length, startIdx + viewCount);
+  const data = currentCandles.slice(startIdx, endIdx);
+  if(!data.length) return;
+
   const padL=64, padR=14, padT=16, padB=28;
   const volH = 70;
   const priceH = H - padT - padB - volH - 8;
   const priceTop = padT;
   const volTop = padT + priceH + 8;
 
-  const data = currentCandles;
   const hi = Math.max(...data.map(d=>d.h));
   const lo = Math.min(...data.map(d=>d.l));
   const range = hi-lo || 1;
@@ -607,23 +625,20 @@ function drawCandles(){
   ctx.beginPath(); ctx.moveTo(padL, volTop-4); ctx.lineTo(W-padR, volTop-4); ctx.stroke();
 
   // candles
-  const bodyW = Math.max(2, Math.floor((W-padL-padR)/data.length * 0.72));
   const slot = (W-padL-padR)/data.length;
+  const bodyW = Math.max(2, Math.floor(slot * 0.72));
   data.forEach((d,i)=>{
     const cx = padL + slot*(i+0.5);
     const up = d.c>=d.o;
     const color = up ? '#35D07F' : '#FF4757';
     ctx.strokeStyle=color; ctx.fillStyle=color;
-    // wick
     ctx.beginPath();
     ctx.moveTo(cx+.5, yPrice(d.h));
     ctx.lineTo(cx+.5, yPrice(d.l));
     ctx.lineWidth=1; ctx.stroke();
-    // body
     const yO=yPrice(d.o), yC=yPrice(d.c);
     const top=Math.min(yO,yC), bh=Math.max(1,Math.abs(yC-yO));
     ctx.fillRect(cx-bodyW/2, top, bodyW, bh);
-    // volume bar
     ctx.globalAlpha = 0.55;
     ctx.fillRect(cx-bodyW/2, yVol(d.v||0), bodyW, (volTop+volH) - yVol(d.v||0));
     ctx.globalAlpha = 1;
@@ -639,18 +654,22 @@ function drawCandles(){
   ctx.font='600 11px "IBM Plex Mono",monospace';
   ctx.fillText(fmtBRL(last.c).replace('R$ ',''), W-padR-35, lastY);
 
-  // volume label
+  // volume label + hint
   ctx.fillStyle='#8A93A3'; ctx.font='10px "IBM Plex Mono",monospace';
   ctx.textAlign='left'; ctx.textBaseline='top';
   ctx.fillText('VOL', padL+4, volTop+4);
+  ctx.textAlign='right';
+  ctx.fillText('SCROLL: zoom  ·  ARRASTAR: mover  ·  DUPLO-CLIQUE: reset', W-padR-4, priceTop+4);
 
-  // save geometry for crosshair
   cvs._geom = {padL,padR,padT,padB,W,H,priceTop,priceH,volTop,volH,yMin,yMax,slot,data};
 }
+
 
 function setupCrosshair(){
   const cross = document.getElementById('crossCanvas');
   const cvs = document.getElementById('candleCanvas');
+  let dragging = false, dragStartX = 0, dragStartView = 0;
+
   const draw = (mx,my)=>{
     const dpr = window.devicePixelRatio||1;
     const ctx = cross.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -665,7 +684,6 @@ function setupCrosshair(){
     const idx = Math.min(g.data.length-1, Math.max(0, Math.floor((mx-g.padL)/g.slot)));
     const d = g.data[idx];
     setOHLC(d.o,d.h,d.l,d.c,d.v);
-    // price label
     const price = g.yMax - ((my-g.priceTop)/g.priceH)*(g.yMax-g.yMin);
     if(my>=g.priceTop && my<=g.priceTop+g.priceH){
       ctx.fillStyle='#12181F'; ctx.strokeStyle='#8A93A3';
@@ -675,21 +693,56 @@ function setupCrosshair(){
       ctx.fillText(fmtBRL(price).replace('R$ ',''), g.padL-32, my);
     }
   };
-  cross.onmousemove = e=>{
+  cross.addEventListener('mousemove', e=>{
     const r = cross.getBoundingClientRect();
+    if(dragging){
+      const g = cvs._geom; if(!g) return;
+      const dx = e.clientX - dragStartX;
+      const perCandle = g.slot;
+      viewStart = dragStartView - dx/perCandle;
+      clampView(); drawCandles();
+      return;
+    }
     draw(e.clientX-r.left, e.clientY-r.top);
-  };
-  cross.onmouseleave = ()=>{
+  });
+  cross.addEventListener('mousedown', e=>{
+    dragging = true; dragStartX = e.clientX; dragStartView = viewStart;
+    cross.style.cursor='grabbing';
+  });
+  window.addEventListener('mouseup', ()=>{ dragging = false; cross.style.cursor='crosshair'; });
+  cross.addEventListener('mouseleave', ()=>{
     const ctx = cross.getContext('2d');
     ctx.clearRect(0,0,cross.width,cross.height);
     if(currentCandles.length){
       const l = currentCandles[currentCandles.length-1];
       setOHLC(l.o,l.h,l.l,l.c,l.v);
     }
-  };
+  });
+  cross.addEventListener('wheel', e=>{
+    e.preventDefault();
+    if(!currentCandles.length) return;
+    const g = cvs._geom; if(!g) return;
+    const r = cross.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const anchor = Math.max(0, Math.min(1, (mx-g.padL)/(g.W-g.padL-g.padR)));
+    const factor = e.deltaY > 0 ? 1.15 : 1/1.15; // out / in
+    const N = currentCandles.length;
+    const newCount = Math.max(6, Math.min(N, Math.round(viewCount*factor)));
+    // keep the candle under cursor anchored
+    const centerIdx = viewStart + anchor*viewCount;
+    viewCount = newCount;
+    viewStart = centerIdx - anchor*newCount;
+    clampView(); drawCandles();
+  }, {passive:false});
+  cross.addEventListener('dblclick', ()=>{
+    viewCount = currentCandles.length;
+    viewStart = 0;
+    drawCandles();
+  });
 }
 setupCrosshair();
 window.addEventListener('resize', ()=>{ drawCandles(); });
+
 
 async function loadChart(){
   const coin = COINS.find(c=>c.id===currentCoin);
@@ -701,7 +754,10 @@ async function loadChart(){
     const candles = await fetchHistory(coin, currentTF);
     if(!candles || candles.length<2) throw new Error('sem dados');
     currentCandles = candles.filter(d=>d.c>0);
+    viewCount = currentCandles.length;
+    viewStart = 0;
     const first = currentCandles[0].o, last = currentCandles[currentCandles.length-1].c;
+
     const change = ((last-first)/first)*100;
     document.getElementById('chartPrice').textContent = fmtBRL(last);
     const chEl = document.getElementById('chartChange');
@@ -900,8 +956,9 @@ async function renderProjects(){
     const up = pct>=0;
     const initials = (p.name||'?').replace(/[^A-Za-zÀ-ÿ0-9]/g,'').slice(0,2).toUpperCase() || '?';
     const media = p.image
-      ? `<img class="card-img" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" loading="lazy" />`
+      ? `<img class="card-img" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.outerHTML='&lt;div class=\\'card-img-ph\\' aria-hidden=\\'true\\'&gt;${escapeHtml(initials)}&lt;/div&gt;'" />`
       : `<div class="card-img-ph" aria-hidden="true">${escapeHtml(initials)}</div>`;
+
     const link = safeUrl(p.link);
     const linkBtn = link
       ? `<a class="card-link" href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer nofollow ugc">Acessar site ↗</a>`
@@ -946,7 +1003,7 @@ window.addEventListener('resize', ()=>{ /* redraw mini charts on resize */
 
 /* ---------- Image helpers ---------- */
 const MAX_IMG_BYTES = 2*1024*1024;
-function readImageAsDataURL(file, maxSide=800, quality=0.85){
+function readImageAsDataURL(file, maxSide=480, quality=0.8){
   return new Promise((resolve,reject)=>{
     if(!file) return resolve(null);
     if(file.size > MAX_IMG_BYTES) return reject(new Error('Imagem maior que 2 MB.'));
@@ -959,9 +1016,12 @@ function readImageAsDataURL(file, maxSide=800, quality=0.85){
         const scale = Math.min(1, maxSide/Math.max(img.width,img.height));
         const w = Math.round(img.width*scale), h = Math.round(img.height*scale);
         const cvs = document.createElement('canvas'); cvs.width=w; cvs.height=h;
-        cvs.getContext('2d').drawImage(img,0,0,w,h);
-        const type = file.type==='image/png' ? 'image/png' : 'image/jpeg';
-        resolve(cvs.toDataURL(type, quality));
+        const cctx = cvs.getContext('2d');
+        // flatten alpha over dark bg so JPEG (much smaller than PNG) looks right
+        cctx.fillStyle = '#12181F'; cctx.fillRect(0,0,w,h);
+        cctx.drawImage(img,0,0,w,h);
+        resolve(cvs.toDataURL('image/jpeg', quality));
+
       };
       img.src = reader.result;
     };
