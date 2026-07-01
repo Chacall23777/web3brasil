@@ -35,20 +35,25 @@ async function fetchMajors(): Promise<TickerItem[]> {
   }
 }
 
+const EXTRA_CONTRACTS: { symbol: string; contract: string }[] = [
+  { symbol: "PUMP", contract: "GkDYHiWxdkWXEJ3nGVyhFqQtYTqp4ggfQKqWpWpLpump" },
+];
+
 async function fetchListedTokens(): Promise<TickerItem[]> {
   const { data } = await supabase
     .from("posts")
     .select("token_symbol, token_contract")
     .eq("type", "token")
     .not("token_contract", "is", null);
-  if (!data?.length) return [];
   const uniq = new Map<string, { symbol: string; contract: string }>();
-  for (const p of data) {
+  for (const e of EXTRA_CONTRACTS) uniq.set(e.contract.toLowerCase(), e);
+  for (const p of data ?? []) {
     const c = (p.token_contract ?? "").trim();
     if (!c || uniq.has(c.toLowerCase())) continue;
     uniq.set(c.toLowerCase(), { symbol: p.token_symbol ?? "", contract: c });
   }
   const list = Array.from(uniq.values()).slice(0, 20);
+
   const rate = await getUsdBrlRate();
   const results = await Promise.all(
     list.map(async (t) => {
