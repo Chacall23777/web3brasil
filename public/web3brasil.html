@@ -525,17 +525,23 @@ async function loadChart(){
 }
 loadChart();
 
-/* ---------- Storage (Claude Artifact — window.storage) ---------- */
-const STORAGE_OK = typeof window !== 'undefined' && !!window.storage
+/* ---------- Storage ----------
+   Preferência: window.storage (Claude Artifact). Fallback: localStorage.
+   Assim publicação funciona em Artifact, Lovable preview e hosting comum. */
+const HAS_CLAUDE_STORAGE = typeof window !== 'undefined' && !!window.storage
   && typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
+const HAS_LOCAL_STORAGE = (()=>{ try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }catch(_){ return false; }})();
+const STORAGE_OK = HAS_CLAUDE_STORAGE || HAS_LOCAL_STORAGE;
 const K_PENDING = 'web3brasil:pending';
 const K_PUBLISHED = 'web3brasil:published';
 
 async function sGet(key){
   if(!STORAGE_OK) return null;
   try{
-    const v = await window.storage.get(key);
-    if(v==null) return [];
+    let v;
+    if(HAS_CLAUDE_STORAGE){ v = await window.storage.get(key); }
+    else { v = localStorage.getItem(key); }
+    if(v==null || v==='') return [];
     if(Array.isArray(v)) return v;
     if(typeof v === 'string'){
       try{ const p = JSON.parse(v); return Array.isArray(p)?p:[]; }
@@ -546,8 +552,11 @@ async function sGet(key){
 }
 async function sSet(key, val){
   if(!STORAGE_OK) return false;
-  try{ await window.storage.set(key, val); return true; }
-  catch(e){ console.warn('storage.set falhou', key, e); return false; }
+  try{
+    if(HAS_CLAUDE_STORAGE){ await window.storage.set(key, val); }
+    else { localStorage.setItem(key, JSON.stringify(val)); }
+    return true;
+  }catch(e){ console.warn('storage.set falhou', key, e); return false; }
 }
 async function readStore(){
   const [pending, published] = await Promise.all([sGet(K_PENDING), sGet(K_PUBLISHED)]);
