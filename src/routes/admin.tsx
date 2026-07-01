@@ -46,7 +46,7 @@ function AdminPage() {
   );
 }
 
-const CHAINS = ["solana", "ethereum", "bsc", "polygon", "base", "arbitrum", "optimism", "avalanche"];
+
 
 function TickerAdmin() {
   const qc = useQueryClient();
