@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, Loader2 } from "lucide-react";
+import { lookupToken, getUsdBrlRate, formatBRL, type TokenInfo } from "@/lib/token-lookup";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -45,7 +46,7 @@ function AdminPage() {
   );
 }
 
-const CHAINS = ["solana", "ethereum", "bsc", "polygon", "base", "arbitrum", "optimism", "avalanche"];
+
 
 function TickerAdmin() {
   const qc = useQueryClient();
@@ -75,20 +76,39 @@ function TickerAdmin() {
   });
 
   const [newAddr, setNewAddr] = useState("");
-  const [newChain, setNewChain] = useState("solana");
+  const [preview, setPreview] = useState<TokenInfo | null>(null);
+  const [brlRate, setBrlRate] = useState<number | null>(null);
+  const [searching, setSearching] = useState(false);
+
+  async function handleSearch() {
+    const addr = newAddr.trim();
+    if (!addr) { toast.error("Cole o endereço do contrato"); return; }
+    setSearching(true);
+    setPreview(null);
+    try {
+      const [info, rate] = await Promise.all([lookupToken(addr), getUsdBrlRate()]);
+      if (!info) { toast.error("Token não encontrado no DexScreener"); return; }
+      setPreview(info);
+      setBrlRate(rate);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao buscar token");
+    } finally {
+      setSearching(false);
+    }
+  }
 
   const addToken = useMutation({
     mutationFn: async () => {
       const addr = newAddr.trim();
-      if (!addr) throw new Error("Informe o endereço do contrato");
+      if (!addr || !preview) throw new Error("Busque o token antes de adicionar");
       const nextOrder = (tokens?.length ?? 0);
       const { error } = await supabase.from("ticker_tokens").insert({
-        contract_address: addr, chain: newChain, ordem: nextOrder, ativo: true,
+        contract_address: addr, chain: preview.chain, ordem: nextOrder, ativo: true,
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      setNewAddr("");
+      setNewAddr(""); setPreview(null);
       toast.success("Token adicionado");
       qc.invalidateQueries({ queryKey: ["ticker_tokens_admin"] });
       qc.invalidateQueries({ queryKey: ["ticker-listed"] });
@@ -144,17 +164,48 @@ function TickerAdmin() {
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
         <h3 className="font-semibold">Adicionar token</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px_auto] gap-2">
-          <Input placeholder="Endereço do contrato" value={newAddr} onChange={(e) => setNewAddr(e.target.value)} />
-          <select
-            value={newChain} onChange={(e) => setNewChain(e.target.value)}
-            className="h-10 rounded-md border bg-background px-2 text-sm"
-          >
-            {CHAINS.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <Button onClick={() => addToken.mutate()} disabled={addToken.isPending}>Adicionar</Button>
+        <p className="text-xs text-muted-foreground">Cole o contrato e clique em Buscar. Os dados (nome, símbolo, rede, imagem, preço) são puxados em tempo real do DexScreener.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+          <Input
+            placeholder="Endereço do contrato"
+            value={newAddr}
+            onChange={(e) => { setNewAddr(e.target.value); setPreview(null); }}
+          />
+          <Button variant="outline" onClick={handleSearch} disabled={searching}>
+            {searching ? <Loader2 className="animate-spin" size={16} /> : "Buscar"}
+          </Button>
         </div>
+
+        {preview && (
+          <div className="rounded-lg border bg-background p-3 flex items-center gap-3">
+            {preview.image ? (
+              <img src={preview.image} alt="" className="h-10 w-10 rounded-full object-cover border" />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">
+                {(preview.symbol || "?")[0]}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-sm truncate">
+                {preview.name} <span className="text-muted-foreground">({preview.symbol})</span>
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                <span className="uppercase">{preview.chain}</span>
+                {preview.priceUsd != null && brlRate != null && (
+                  <span>• {formatBRL(preview.priceUsd * brlRate)}</span>
+                )}
+                {preview.priceChange24h != null && (
+                  <span className={preview.priceChange24h >= 0 ? "text-green-500" : "text-red-500"}>
+                    {preview.priceChange24h >= 0 ? "+" : ""}{preview.priceChange24h.toFixed(2)}%
+                  </span>
+                )}
+              </div>
+            </div>
+            <Button onClick={() => addToken.mutate()} disabled={addToken.isPending}>Adicionar</Button>
+          </div>
+        )}
       </div>
+
 
       <div className="rounded-xl border bg-card divide-y">
         {(tokens ?? []).map((t: any) => (
