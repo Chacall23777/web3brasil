@@ -26,6 +26,8 @@ export function NewPostForm() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [image, setImage] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   // token
   const [tName, setTName] = useState("");
