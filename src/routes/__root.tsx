@@ -91,6 +91,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: siteTitle },
       { name: "twitter:description", content: siteDescription },
+      { title: "Lovable App" },
+      { property: "og:title", content: "Lovable App" },
+      { name: "twitter:title", content: "Lovable App" },
+      { name: "description", content: "Radar BR Crypto is a single-page web app for the Brazilian crypto community to discover national token projects." },
+      { property: "og:description", content: "Radar BR Crypto is a single-page web app for the Brazilian crypto community to discover national token projects." },
+      { name: "twitter:description", content: "Radar BR Crypto is a single-page web app for the Brazilian crypto community to discover national token projects." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b6e31928-2147-4c1e-a170-06c579c4f9c7/id-preview-df0c5236--95f3a2bc-7712-498e-9812-97fc8e72d2d3.lovable.app-1782921415240.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b6e31928-2147-4c1e-a170-06c579c4f9c7/id-preview-df0c5236--95f3a2bc-7712-498e-9812-97fc8e72d2d3.lovable.app-1782921415240.png" },
     ],
     links: [
       {
