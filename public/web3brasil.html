@@ -1016,9 +1016,12 @@ function readImageAsDataURL(file, maxSide=480, quality=0.8){
         const scale = Math.min(1, maxSide/Math.max(img.width,img.height));
         const w = Math.round(img.width*scale), h = Math.round(img.height*scale);
         const cvs = document.createElement('canvas'); cvs.width=w; cvs.height=h;
-        cvs.getContext('2d').drawImage(img,0,0,w,h);
-        const type = file.type==='image/png' ? 'image/png' : 'image/jpeg';
-        resolve(cvs.toDataURL(type, quality));
+        const cctx = cvs.getContext('2d');
+        // flatten alpha over dark bg so JPEG (much smaller than PNG) looks right
+        cctx.fillStyle = '#12181F'; cctx.fillRect(0,0,w,h);
+        cctx.drawImage(img,0,0,w,h);
+        resolve(cvs.toDataURL('image/jpeg', quality));
+
       };
       img.src = reader.result;
     };
