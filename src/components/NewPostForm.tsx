@@ -11,7 +11,9 @@ import { toast } from "sonner";
 import { normalizeChain } from "./TokenChart";
 import { lookupToken } from "@/lib/token-lookup";
 import { Link } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText, X } from "lucide-react";
+
+const MAX_PDF_MB = 25;
 
 
 
