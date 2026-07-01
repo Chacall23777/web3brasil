@@ -381,6 +381,11 @@ footer{padding:48px 0 40px;background:#080C10}
               <div class="field"><label for="d_link">Link oficial</label><input id="d_link" type="url" required maxlength="200" /></div>
             </div>
             <div class="field"><label for="d_desc">Descrição curta</label><textarea id="d_desc" required maxlength="240"></textarea></div>
+            <div class="field">
+              <label for="d_image">Imagem do token</label>
+              <input id="d_image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+              <img id="d_image_preview" class="img-preview" style="display:none" alt="" />
+            </div>
             <button class="btn btn-primary" type="submit">Publicar sem passar pela fila</button>
             <div id="directMsg" class="form-msg" style="display:none"></div>
           </form>
