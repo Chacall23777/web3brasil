@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Feed } from "@/components/Feed";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth-context";
+
 
 export const Route = createFileRoute("/")({
   component: Home,
