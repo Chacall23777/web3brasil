@@ -393,12 +393,12 @@ footer{padding:48px 0 40px;background:#080C10}
    ========================================================= */
 
 const COINS = [
-  {id:'bitcoin',sym:'BTC',name:'Bitcoin'},
-  {id:'ethereum',sym:'ETH',name:'Ethereum'},
-  {id:'binancecoin',sym:'BNB',name:'BNB'},
-  {id:'solana',sym:'SOL',name:'Solana'},
-  {id:'matic-network',sym:'POL',name:'Polygon'},
-  {id:'ripple',sym:'XRP',name:'XRP'},
+  {id:'bitcoin',sym:'BTC',name:'Bitcoin',cc:'BTC'},
+  {id:'ethereum',sym:'ETH',name:'Ethereum',cc:'ETH'},
+  {id:'binancecoin',sym:'BNB',name:'BNB',cc:'BNB'},
+  {id:'solana',sym:'SOL',name:'Solana',cc:'SOL'},
+  {id:'matic-network',sym:'POL',name:'Polygon',cc:'MATIC'},
+  {id:'ripple',sym:'XRP',name:'XRP',cc:'XRP'},
 ];
 
 const ADMIN_PASS = 'radar-br-2026'; // Trava visível — não é segurança real.
@@ -407,13 +407,49 @@ const fmtBRL = n => 'R$ ' + Number(n).toLocaleString('pt-BR',{minimumFractionDig
 const fmtPct = n => (n>=0?'+':'') + Number(n).toFixed(2) + '%';
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
+/* ---------- Data sources (CryptoCompare primary, CoinGecko fallback) ---------- */
+async function fetchJSON(url){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error('http '+r.status);
+  return r.json();
+}
+
+async function fetchPrices(){
+  // Try CryptoCompare first (very CORS-friendly, no key needed)
+  try{
+    const syms = COINS.map(c=>c.cc).join(',');
+    const j = await fetchJSON(`https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${syms}&tsyms=BRL`);
+    if(!j || !j.RAW) throw new Error('shape');
+    const out = {};
+    COINS.forEach(c=>{
+      const d = j.RAW[c.cc] && j.RAW[c.cc].BRL;
+      if(d) out[c.id] = {brl:d.PRICE, brl_24h_change:d.CHANGEPCT24HOUR};
+    });
+    if(Object.keys(out).length===0) throw new Error('empty');
+    return out;
+  }catch(_){}
+  // Fallback: CoinGecko
+  const ids = COINS.map(c=>c.id).join(',');
+  const j = await fetchJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl&include_24hr_change=true`);
+  return j;
+}
+
+async function fetchHistory(coin){
+  // CryptoCompare histoday: [{time, close}]
+  try{
+    const j = await fetchJSON(`https://min-api.cryptocompare.com/data/v2/histoday?fsym=${coin.cc}&tsym=BRL&limit=7`);
+    if(!j || !j.Data || !j.Data.Data) throw new Error('shape');
+    return j.Data.Data.map(d=>[d.time*1000, d.close]);
+  }catch(_){}
+  // Fallback: CoinGecko
+  const j = await fetchJSON(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=brl&days=7&interval=daily`);
+  return j.prices;
+}
+
 /* ---------- Ticker ---------- */
 async function loadTicker(){
   try{
-    const ids = COINS.map(c=>c.id).join(',');
-    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl&include_24hr_change=true`);
-    if(!r.ok) throw new Error('rede');
-    const data = await r.json();
+    const data = await fetchPrices();
     const items = COINS.map(c=>{
       const d = data[c.id]; if(!d) return '';
       const ch = d.brl_24h_change||0;
@@ -421,9 +457,7 @@ async function loadTicker(){
       const arrow = ch>=0?'▲':'▼';
       return `<span class="tick-item"><span class="tick-sym">${c.sym}/BRL</span><span class="tick-price">${fmtBRL(d.brl)}</span><span class="${cls}">${arrow} ${fmtPct(ch)}</span></span>`;
     }).join('');
-    // duplicate for seamless marquee
     document.getElementById('ticker').innerHTML = items + items;
-    // hero panel
     const heroRows = COINS.slice(0,5).map(c=>{
       const d = data[c.id]; if(!d) return '';
       const ch = d.brl_24h_change||0;
@@ -432,6 +466,7 @@ async function loadTicker(){
     document.getElementById('heroRows').innerHTML = heroRows;
     document.getElementById('heroTime').textContent = new Date().toLocaleTimeString('pt-BR');
   }catch(e){
+    console.warn('ticker falhou', e);
     document.getElementById('ticker').innerHTML = '<span class="tick-item loading">Cotações indisponíveis no momento. Tentando novamente em breve.</span>';
   }
 }
@@ -456,10 +491,8 @@ async function loadChart(){
   document.getElementById('chartPrice').textContent = 'R$ …';
   document.getElementById('chartChange').textContent = '…';
   try{
-    const r = await fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=brl&days=7`);
-    if(!r.ok) throw new Error('rede');
-    const j = await r.json();
-    const prices = j.prices; // [ts, price]
+    const prices = await fetchHistory(coin);
+    if(!prices || prices.length<2) throw new Error('sem dados');
     const labels = prices.map(p=>new Date(p[0]).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}));
     const values = prices.map(p=>p[1]);
     const first = values[0], last = values[values.length-1];
@@ -469,34 +502,46 @@ async function loadChart(){
     chEl.textContent = fmtPct(change) + ' (7d)';
     chEl.className = 'chart-change ' + (change>=0?'up':'down');
 
-    const ctx = document.getElementById('mainChart').getContext('2d');
+    const canvas = document.getElementById('mainChart');
+    const ctx = canvas.getContext('2d');
     const grad = ctx.createLinearGradient(0,0,0,340);
     grad.addColorStop(0,'rgba(255,122,26,.35)');
     grad.addColorStop(1,'rgba(255,122,26,0)');
-    if(mainChart) mainChart.destroy();
+    if(mainChart){ mainChart.destroy(); mainChart=null; }
+    if(typeof Chart === 'undefined'){
+      document.getElementById('chartPrice').textContent = fmtBRL(last);
+      return;
+    }
     mainChart = new Chart(ctx,{
       type:'line',
       data:{labels,datasets:[{data:values,borderColor:'#FF7A1A',backgroundColor:grad,borderWidth:2,fill:true,tension:.25,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#FF7A1A'}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#12181F',borderColor:'#232B35',borderWidth:1,titleColor:'#EDEFF2',bodyColor:'#EDEFF2',bodyFont:{family:'IBM Plex Mono'},callbacks:{label:c=>fmtBRL(c.parsed.y)}}},scales:{x:{ticks:{color:'#8A93A3',font:{family:'IBM Plex Mono',size:11}},grid:{color:'rgba(35,43,53,.6)'}},y:{ticks:{color:'#8A93A3',font:{family:'IBM Plex Mono',size:11},callback:v=>'R$ '+Number(v).toLocaleString('pt-BR',{maximumFractionDigits:0})},grid:{color:'rgba(35,43,53,.6)'}}}}
     });
   }catch(e){
+    console.warn('chart falhou', e);
     document.getElementById('chartPrice').textContent = 'Indisponível';
     document.getElementById('chartChange').textContent = '—';
   }
 }
 loadChart();
 
-/* ---------- Storage (Claude Artifact — window.storage) ---------- */
-const STORAGE_OK = typeof window !== 'undefined' && !!window.storage
+/* ---------- Storage ----------
+   Preferência: window.storage (Claude Artifact). Fallback: localStorage.
+   Assim publicação funciona em Artifact, Lovable preview e hosting comum. */
+const HAS_CLAUDE_STORAGE = typeof window !== 'undefined' && !!window.storage
   && typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
+const HAS_LOCAL_STORAGE = (()=>{ try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }catch(_){ return false; }})();
+const STORAGE_OK = HAS_CLAUDE_STORAGE || HAS_LOCAL_STORAGE;
 const K_PENDING = 'web3brasil:pending';
 const K_PUBLISHED = 'web3brasil:published';
 
 async function sGet(key){
   if(!STORAGE_OK) return null;
   try{
-    const v = await window.storage.get(key);
-    if(v==null) return [];
+    let v;
+    if(HAS_CLAUDE_STORAGE){ v = await window.storage.get(key); }
+    else { v = localStorage.getItem(key); }
+    if(v==null || v==='') return [];
     if(Array.isArray(v)) return v;
     if(typeof v === 'string'){
       try{ const p = JSON.parse(v); return Array.isArray(p)?p:[]; }
@@ -507,8 +552,11 @@ async function sGet(key){
 }
 async function sSet(key, val){
   if(!STORAGE_OK) return false;
-  try{ await window.storage.set(key, val); return true; }
-  catch(e){ console.warn('storage.set falhou', key, e); return false; }
+  try{
+    if(HAS_CLAUDE_STORAGE){ await window.storage.set(key, val); }
+    else { localStorage.setItem(key, JSON.stringify(val)); }
+    return true;
+  }catch(e){ console.warn('storage.set falhou', key, e); return false; }
 }
 async function readStore(){
   const [pending, published] = await Promise.all([sGet(K_PENDING), sGet(K_PUBLISHED)]);
