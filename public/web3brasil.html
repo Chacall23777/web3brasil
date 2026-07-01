@@ -319,6 +319,12 @@ footer{padding:48px 0 40px;background:#080C10}
           <div class="field"><label for="f_link">Link oficial</label><input id="f_link" type="url" required maxlength="200" placeholder="https://…" /></div>
         </div>
         <div class="field"><label for="f_desc">Descrição curta</label><textarea id="f_desc" required maxlength="240" placeholder="Em 1 ou 2 frases: o que o projeto faz."></textarea></div>
+        <div class="field">
+          <label for="f_image">Imagem do token (logo ou banner)</label>
+          <input id="f_image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+          <img id="f_image_preview" class="img-preview" style="display:none" alt="" />
+          <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">PNG, JPG ou WebP. Até 2 MB — a imagem é reduzida automaticamente antes de salvar.</span>
+        </div>
         <div class="field"><label for="f_contact">Contato (e-mail ou @)</label><input id="f_contact" required maxlength="80" placeholder="voce@dominio.com ou @seuhandle" /></div>
         <button type="submit" class="btn btn-primary" id="submitBtn">Enviar para aprovação</button>
         <div id="submitMsg" class="form-msg" style="display:none"></div>
