@@ -78,15 +78,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "web3brasil" },
-      { name: "description", content: "🚀 Comunidade oficial de apoio aos Tokens BR 🇧🇷 💎 Notícias | Projetos | Oportunidades Web3 🤝 Juntos fortalecendo o ecossistema brasileiro" },
+      { name: "description", content: "🚀 Comunidade oficial de apoio aos Tokens BR 🇧🇷
+💎 Notícias | Projetos | Oportunidades Web3
+🤝 Juntos fortalecendo o ecossistema brasileiro" },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "web3brasil" },
-      { property: "og:description", content: "🚀 Comunidade oficial de apoio aos Tokens BR 🇧🇷 💎 Notícias | Projetos | Oportunidades Web3 🤝 Juntos fortalecendo o ecossistema brasileiro" },
+      { property: "og:description", content: "🚀 Comunidade oficial de apoio aos Tokens BR 🇧🇷
+💎 Notícias | Projetos | Oportunidades Web3
+🤝 Juntos fortalecendo o ecossistema brasileiro" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "web3brasil" },
-      { name: "twitter:description", content: "🚀 Comunidade oficial de apoio aos Tokens BR 🇧🇷 💎 Notícias | Projetos | Oportunidades Web3 🤝 Juntos fortalecendo o ecossistema brasileiro" },
+      { name: "twitter:description", content: "🚀 Comunidade oficial de apoio aos Tokens BR 🇧🇷
+💎 Notícias | Projetos | Oportunidades Web3
+🤝 Juntos fortalecendo o ecossistema brasileiro" },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/EXtaR3iy8nfSHz71pHypSiP0C7G3/social-images/social-1782914839933-Captura_de_tela_2026-07-01_110658.webp" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/EXtaR3iy8nfSHz71pHypSiP0C7G3/social-images/social-1782914839933-Captura_de_tela_2026-07-01_110658.webp" },
 
