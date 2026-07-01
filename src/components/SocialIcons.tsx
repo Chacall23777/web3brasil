@@ -22,3 +22,11 @@ export const InstagramIcon = (p: SVGProps<SVGSVGElement>) => (
     <circle cx="17.5" cy="6.5" r="1" fill="currentColor" />
   </svg>
 );
+
+// Cores oficiais das marcas (usadas na versão "colorida" das redes)
+export const BRAND_COLORS = {
+  x: "#000000",
+  telegram: "#229ED9",
+  whatsapp: "#25D366",
+  instagram: "#E1306C",
+} as const;
