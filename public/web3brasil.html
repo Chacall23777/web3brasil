@@ -555,6 +555,17 @@ document.querySelectorAll('#tfTabs .tf-tab').forEach(t=>{
   };
 });
 
+// Indicadores ligáveis
+const indicators = { sma20:true, ema50:true, bb:false };
+document.querySelectorAll('#indTabs .ind-tab').forEach(t=>{
+  t.onclick = ()=>{
+    const k = t.dataset.ind;
+    indicators[k] = !indicators[k];
+    t.classList.toggle('active', indicators[k]);
+    drawCandles();
+  };
+});
+
 function setOHLC(o,h,l,c,v){
   document.getElementById('oO').textContent = o!=null?fmtBRL(o):'—';
   document.getElementById('oH').textContent = h!=null?fmtBRL(h):'—';
