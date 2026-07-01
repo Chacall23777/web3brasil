@@ -956,8 +956,9 @@ async function renderProjects(){
     const up = pct>=0;
     const initials = (p.name||'?').replace(/[^A-Za-zÀ-ÿ0-9]/g,'').slice(0,2).toUpperCase() || '?';
     const media = p.image
-      ? `<img class="card-img" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" loading="lazy" />`
+      ? `<img class="card-img" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.outerHTML='&lt;div class=\\'card-img-ph\\' aria-hidden=\\'true\\'&gt;${escapeHtml(initials)}&lt;/div&gt;'" />`
       : `<div class="card-img-ph" aria-hidden="true">${escapeHtml(initials)}</div>`;
+
     const link = safeUrl(p.link);
     const linkBtn = link
       ? `<a class="card-link" href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer nofollow ugc">Acessar site ↗</a>`
