@@ -35,33 +35,22 @@ async function fetchMajors(): Promise<TickerItem[]> {
   }
 }
 
-const EXTRA_CONTRACTS: { symbol: string; contract: string }[] = [
-  { symbol: "PUMP", contract: "GkDYHiWxdkWXEJ3nGVyhFqQtYTqp4ggfQKqWpWpLpump" },
-];
-
 async function fetchListedTokens(): Promise<TickerItem[]> {
   const { data } = await supabase
-    .from("posts")
-    .select("token_symbol, token_contract")
-    .eq("type", "token")
-    .not("token_contract", "is", null);
-  const uniq = new Map<string, { symbol: string; contract: string }>();
-  for (const e of EXTRA_CONTRACTS) uniq.set(e.contract.toLowerCase(), e);
-  for (const p of data ?? []) {
-    const c = (p.token_contract ?? "").trim();
-    if (!c || uniq.has(c.toLowerCase())) continue;
-    uniq.set(c.toLowerCase(), { symbol: p.token_symbol ?? "", contract: c });
-  }
-  const list = Array.from(uniq.values()).slice(0, 20);
+    .from("ticker_tokens")
+    .select("contract_address")
+    .eq("ativo", true)
+    .order("ordem", { ascending: true });
 
+  const list = (data ?? []).map((t) => t.contract_address).filter(Boolean);
   const rate = await getUsdBrlRate();
   const results = await Promise.all(
-    list.map(async (t) => {
-      const info = await lookupToken(t.contract).catch(() => null);
+    list.map(async (addr) => {
+      const info = await lookupToken(addr).catch(() => null);
       if (!info) return null;
       return {
-        key: t.contract,
-        symbol: info.symbol || t.symbol || "?",
+        key: addr,
+        symbol: info.symbol || "?",
         priceBrl: info.priceUsd != null ? info.priceUsd * rate : null,
         change24h: info.priceChange24h,
         image: info.image,
@@ -72,6 +61,12 @@ async function fetchListedTokens(): Promise<TickerItem[]> {
 }
 
 export function Ticker() {
+  const { data: config } = useQuery({
+    queryKey: ["ticker_config"],
+    queryFn: async () =>
+      (await supabase.from("ticker_config").select("speed_seconds").eq("id", 1).maybeSingle()).data,
+    staleTime: 60_000,
+  });
   const { data: majors = [] } = useQuery({
     queryKey: ["ticker-majors"],
     queryFn: fetchMajors,
@@ -81,18 +76,22 @@ export function Ticker() {
   const { data: listed = [] } = useQuery({
     queryKey: ["ticker-listed"],
     queryFn: fetchListedTokens,
-    refetchInterval: 60_000,
-    staleTime: 45_000,
+    refetchInterval: 30_000,
+    staleTime: 20_000,
   });
 
   const items = [...majors, ...listed];
   if (!items.length) return null;
   const loop = [...items, ...items];
+  const speed = config?.speed_seconds ?? 15;
 
   return (
     <div className="border-b bg-background/70 backdrop-blur overflow-hidden">
       <div className="relative">
-        <div className="flex gap-6 py-1.5 whitespace-nowrap animate-[ticker_15s_linear_infinite] hover:[animation-play-state:paused]">
+        <div
+          className="flex gap-6 py-1.5 whitespace-nowrap hover:[animation-play-state:paused]"
+          style={{ animation: `ticker ${speed}s linear infinite` }}
+        >
           {loop.map((it, i) => {
             const up = (it.change24h ?? 0) >= 0;
             return (
