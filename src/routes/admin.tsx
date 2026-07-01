@@ -76,20 +76,39 @@ function TickerAdmin() {
   });
 
   const [newAddr, setNewAddr] = useState("");
-  const [newChain, setNewChain] = useState("solana");
+  const [preview, setPreview] = useState<TokenInfo | null>(null);
+  const [brlRate, setBrlRate] = useState<number | null>(null);
+  const [searching, setSearching] = useState(false);
+
+  async function handleSearch() {
+    const addr = newAddr.trim();
+    if (!addr) { toast.error("Cole o endereço do contrato"); return; }
+    setSearching(true);
+    setPreview(null);
+    try {
+      const [info, rate] = await Promise.all([lookupToken(addr), getUsdBrlRate()]);
+      if (!info) { toast.error("Token não encontrado no DexScreener"); return; }
+      setPreview(info);
+      setBrlRate(rate);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao buscar token");
+    } finally {
+      setSearching(false);
+    }
+  }
 
   const addToken = useMutation({
     mutationFn: async () => {
       const addr = newAddr.trim();
-      if (!addr) throw new Error("Informe o endereço do contrato");
+      if (!addr || !preview) throw new Error("Busque o token antes de adicionar");
       const nextOrder = (tokens?.length ?? 0);
       const { error } = await supabase.from("ticker_tokens").insert({
-        contract_address: addr, chain: newChain, ordem: nextOrder, ativo: true,
+        contract_address: addr, chain: preview.chain, ordem: nextOrder, ativo: true,
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      setNewAddr("");
+      setNewAddr(""); setPreview(null);
       toast.success("Token adicionado");
       qc.invalidateQueries({ queryKey: ["ticker_tokens_admin"] });
       qc.invalidateQueries({ queryKey: ["ticker-listed"] });
