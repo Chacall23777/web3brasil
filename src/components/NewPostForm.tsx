@@ -9,7 +9,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
 import { normalizeChain } from "./TokenChart";
+import { lookupToken } from "@/lib/token-lookup";
 import { Link } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
 
 const CHAINS = ["solana", "ethereum", "bsc", "polygon", "base", "arbitrum", "optimism", "avalanche"];
 
@@ -31,6 +33,32 @@ export function NewPostForm() {
   const [tLink, setTLink] = useState("");
   const [tImage, setTImage] = useState<string | null>(null);
   const [tContent, setTContent] = useState("");
+  const [fetched, setFetched] = useState(false);
+  const [fetching, setFetching] = useState(false);
+
+  const doLookup = async () => {
+    if (!tContract.trim()) { toast.error("Informe o contrato"); return; }
+    setFetching(true);
+    try {
+      const info = await lookupToken(tContract);
+      if (!info) { toast.error("Token não encontrado no DexScreener"); return; }
+      setTName(info.name || "");
+      setTSymbol(info.symbol || "");
+      setTChain(info.chain);
+      if (info.image) setTImage(info.image);
+      setFetched(true);
+      toast.success(`Encontrado: ${info.name} ($${info.symbol})`);
+    } catch {
+      toast.error("Falha ao buscar o token");
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const resetToken = () => {
+    setFetched(false);
+    setTName(""); setTSymbol(""); setTChain("solana"); setTImage(null);
+  };
 
   const submit = useMutation({
     mutationFn: async () => {
