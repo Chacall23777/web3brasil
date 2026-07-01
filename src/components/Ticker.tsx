@@ -10,31 +10,6 @@ type TickerItem = {
   image?: string | null;
 };
 
-const MAJORS = [
-  { id: "bitcoin", symbol: "BTC" },
-  { id: "ethereum", symbol: "ETH" },
-  { id: "solana", symbol: "SOL" },
-  { id: "binancecoin", symbol: "BNB" },
-];
-
-async function fetchMajors(): Promise<TickerItem[]> {
-  try {
-    const ids = MAJORS.map((m) => m.id).join(",");
-    const r = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=brl&include_24hr_change=true`,
-    );
-    const j = await r.json();
-    return MAJORS.map((m) => ({
-      key: m.symbol,
-      symbol: m.symbol,
-      priceBrl: j?.[m.id]?.brl ?? null,
-      change24h: j?.[m.id]?.brl_24h_change ?? null,
-    }));
-  } catch {
-    return MAJORS.map((m) => ({ key: m.symbol, symbol: m.symbol, priceBrl: null, change24h: null }));
-  }
-}
-
 async function fetchListedTokens(): Promise<TickerItem[]> {
   const { data } = await supabase
     .from("ticker_tokens")
@@ -43,6 +18,7 @@ async function fetchListedTokens(): Promise<TickerItem[]> {
     .order("ordem", { ascending: true });
 
   const list = (data ?? []).map((t) => t.contract_address).filter(Boolean);
+  if (!list.length) return [];
   const rate = await getUsdBrlRate();
   const results = await Promise.all(
     list.map(async (addr) => {
@@ -67,12 +43,6 @@ export function Ticker() {
       (await supabase.from("ticker_config").select("speed_seconds").eq("id", 1).maybeSingle()).data,
     staleTime: 60_000,
   });
-  const { data: majors = [] } = useQuery({
-    queryKey: ["ticker-majors"],
-    queryFn: fetchMajors,
-    refetchInterval: 30_000,
-    staleTime: 20_000,
-  });
   const { data: listed = [] } = useQuery({
     queryKey: ["ticker-listed"],
     queryFn: fetchListedTokens,
@@ -80,10 +50,11 @@ export function Ticker() {
     staleTime: 20_000,
   });
 
-  const items = [...majors, ...listed];
+  const items = listed;
   if (!items.length) return null;
   const loop = [...items, ...items];
   const speed = config?.speed_seconds ?? 15;
+
 
   return (
     <div className="border-b bg-background/70 backdrop-blur overflow-hidden">
