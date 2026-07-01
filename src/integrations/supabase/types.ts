@@ -265,24 +265,30 @@ export type Database = {
           chain: string
           contract_address: string
           created_at: string
+          fonte: string
           id: string
           ordem: number
+          symbol: string | null
         }
         Insert: {
           ativo?: boolean
           chain?: string
           contract_address: string
           created_at?: string
+          fonte?: string
           id?: string
           ordem?: number
+          symbol?: string | null
         }
         Update: {
           ativo?: boolean
           chain?: string
           contract_address?: string
           created_at?: string
+          fonte?: string
           id?: string
           ordem?: number
+          symbol?: string | null
         }
         Relationships: []
       }
