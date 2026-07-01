@@ -9,9 +9,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
 import { normalizeChain } from "./TokenChart";
+import { lookupToken } from "@/lib/token-lookup";
 import { Link } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
 
-const CHAINS = ["solana", "ethereum", "bsc", "polygon", "base", "arbitrum", "optimism", "avalanche"];
+
 
 export function NewPostForm() {
   const { user } = useAuth();
@@ -31,6 +33,32 @@ export function NewPostForm() {
   const [tLink, setTLink] = useState("");
   const [tImage, setTImage] = useState<string | null>(null);
   const [tContent, setTContent] = useState("");
+  const [fetched, setFetched] = useState(false);
+  const [fetching, setFetching] = useState(false);
+
+  const doLookup = async () => {
+    if (!tContract.trim()) { toast.error("Informe o contrato"); return; }
+    setFetching(true);
+    try {
+      const info = await lookupToken(tContract);
+      if (!info) { toast.error("Token não encontrado no DexScreener"); return; }
+      setTName(info.name || "");
+      setTSymbol(info.symbol || "");
+      setTChain(info.chain);
+      if (info.image) setTImage(info.image);
+      setFetched(true);
+      toast.success(`Encontrado: ${info.name} ($${info.symbol})`);
+    } catch {
+      toast.error("Falha ao buscar o token");
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const resetToken = () => {
+    setFetched(false);
+    setTName(""); setTSymbol(""); setTChain("solana"); setTImage(null);
+  };
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -45,7 +73,8 @@ export function NewPostForm() {
         });
         if (error) throw error;
       } else {
-        if (!tName.trim() || !tSymbol.trim() || !tContract.trim()) throw new Error("Nome, símbolo e contrato são obrigatórios");
+        if (!fetched) throw new Error("Clique em Buscar para carregar as informações do token");
+        if (!tName.trim() || !tSymbol.trim() || !tContract.trim()) throw new Error("Contrato inválido ou token não encontrado");
         if (!normalizeChain(tChain)) throw new Error("Rede não suportada pelo gráfico");
         const { error } = await supabase.from("posts").insert({
           user_id: user.id, type: "token",
@@ -63,7 +92,7 @@ export function NewPostForm() {
     onSuccess: () => {
       toast.success("Postado!");
       setTitle(""); setContent(""); setImage(null);
-      setTName(""); setTSymbol(""); setTContract(""); setTLink(""); setTImage(null); setTContent("");
+      setTName(""); setTSymbol(""); setTContract(""); setTLink(""); setTImage(null); setTContent(""); setFetched(false);
       qc.invalidateQueries({ queryKey: ["feed"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -104,24 +133,54 @@ export function NewPostForm() {
           </div>
         </TabsContent>
 
-        <TabsContent value="token" className="space-y-2 mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Input placeholder="Nome do token" value={tName} onChange={(e) => setTName(e.target.value)} maxLength={80} />
-            <Input placeholder="Símbolo / ticker" value={tSymbol} onChange={(e) => setTSymbol(e.target.value)} maxLength={20} />
+        <TabsContent value="token" className="space-y-3 mt-4">
+          <div>
+            <label className="text-xs text-muted-foreground">Endereço do contrato</label>
+            <div className="flex gap-2 mt-1">
+              <Input
+                placeholder="0x… ou endereço Solana"
+                value={tContract}
+                onChange={(e) => { setTContract(e.target.value); setFetched(false); }}
+                className="font-mono text-xs flex-1"
+              />
+              <Button type="button" variant="secondary" onClick={doLookup} disabled={fetching || !tContract.trim()}>
+                {fetching ? <><Loader2 size={14} className="animate-spin mr-1" /> Buscando…</> : "Buscar"}
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Nome, símbolo, rede, imagem e preço são preenchidos automaticamente via DexScreener.
+            </p>
           </div>
-          <Input placeholder="Endereço do contrato" value={tContract} onChange={(e) => setTContract(e.target.value)} className="font-mono text-xs" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <select value={tChain} onChange={(e) => setTChain(e.target.value)} className="h-9 rounded-md border bg-transparent px-3 text-sm">
-              {CHAINS.map((c) => <option key={c} value={c} className="bg-background">{c}</option>)}
-            </select>
-            <Input placeholder="Link externo (site / X / TG)" value={tLink} onChange={(e) => setTLink(e.target.value)} />
+
+          {fetched && (
+            <div className="rounded-lg border bg-muted/30 p-3 flex items-center gap-3">
+              {tImage ? (
+                <img src={tImage} alt="" className="h-12 w-12 rounded-full object-cover border" />
+              ) : (
+                <div className="h-12 w-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
+                  {tSymbol[0] ?? "?"}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold truncate">{tName} <span className="text-primary">${tSymbol}</span></div>
+                <div className="text-xs text-muted-foreground uppercase">{tChain}</div>
+              </div>
+              <Button type="button" variant="ghost" size="sm" onClick={resetToken}>Limpar</Button>
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs text-muted-foreground">Site do projeto (manual)</label>
+            <Input placeholder="https://…" value={tLink} onChange={(e) => setTLink(e.target.value)} className="mt-1" />
           </div>
+
           <Textarea placeholder="Descrição do projeto (opcional)" value={tContent} onChange={(e) => setTContent(e.target.value)} rows={3} maxLength={1000} />
-          <div className="flex items-center gap-2">
-            <Input type="file" accept="image/*" onChange={(e) => handleImg(e.target.files?.[0], setTImage)} className="flex-1" />
-            {tImage && <img src={tImage} alt="" className="h-12 w-12 rounded object-cover border" />}
-          </div>
-          <p className="text-xs text-muted-foreground">Gráfico será carregado pelo GeckoTerminal com base no contrato + rede.</p>
+
+          {!fetched && (
+            <p className="text-xs text-muted-foreground">
+              Clique em <strong>Buscar</strong> para carregar as informações do token antes de publicar.
+            </p>
+          )}
         </TabsContent>
       </Tabs>
 
