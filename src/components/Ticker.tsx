@@ -92,7 +92,7 @@ export function Ticker() {
   return (
     <div className="border-b bg-background/70 backdrop-blur overflow-hidden">
       <div className="relative">
-        <div className="flex gap-6 py-1.5 whitespace-nowrap animate-[ticker_30s_linear_infinite] hover:[animation-play-state:paused]">
+        <div className="flex gap-6 py-1.5 whitespace-nowrap animate-[ticker_20s_linear_infinite] hover:[animation-play-state:paused]">
           {loop.map((it, i) => {
             const up = (it.change24h ?? 0) >= 0;
             return (
