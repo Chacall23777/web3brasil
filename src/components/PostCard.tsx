@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Heart, MessageCircle, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Trash2, FileText, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,8 @@ export type FeedPost = {
   token_contract: string | null;
   token_chain: string | null;
   token_link: string | null;
+  file_url?: string | null;
+  file_name?: string | null;
   created_at: string;
   profiles: {
     display_name: string;
@@ -152,6 +154,31 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
             {post.content && <p className="text-sm whitespace-pre-wrap">{post.content}</p>}
             {post.image_url && <img src={post.image_url} alt="" className="rounded-lg border max-h-96" />}
           </>
+        )}
+        {post.file_url && (
+          <div className="rounded-lg border bg-muted/30 overflow-hidden">
+            <div className="flex items-center gap-2 p-3 border-b">
+              <FileText size={18} className="text-primary shrink-0" />
+              <span className="text-sm font-medium truncate flex-1">{post.file_name ?? "Arquivo PDF"}</span>
+              <a
+                href={post.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                download={post.file_name ?? undefined}
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                <Download size={14} /> Baixar
+              </a>
+            </div>
+            <object data={`${post.file_url}#toolbar=1&view=FitH`} type="application/pdf" className="w-full h-[500px] bg-background">
+              <div className="p-4 text-sm text-muted-foreground text-center">
+                Não foi possível exibir o PDF no navegador.{" "}
+                <a href={post.file_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  Abrir em nova aba
+                </a>
+              </div>
+            </object>
+          </div>
         )}
       </div>
 

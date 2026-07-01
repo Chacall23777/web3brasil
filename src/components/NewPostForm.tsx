@@ -11,7 +11,9 @@ import { toast } from "sonner";
 import { normalizeChain } from "./TokenChart";
 import { lookupToken } from "@/lib/token-lookup";
 import { Link } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText, X } from "lucide-react";
+
+const MAX_PDF_MB = 25;
 
 
 
@@ -24,6 +26,8 @@ export function NewPostForm() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [image, setImage] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   // token
   const [tName, setTName] = useState("");
@@ -60,16 +64,41 @@ export function NewPostForm() {
     setTName(""); setTSymbol(""); setTChain("solana"); setTImage(null);
   };
 
+  const uploadFile = async (): Promise<{ url: string; name: string } | null> => {
+    if (!file || !user) return null;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "pdf";
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("post-files").upload(path, file, {
+        contentType: file.type || "application/pdf",
+        upsert: false,
+      });
+      if (upErr) throw upErr;
+      const { data: signed, error: sErr } = await supabase.storage
+        .from("post-files")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      if (sErr || !signed) throw sErr ?? new Error("Falha ao gerar link");
+      return { url: signed.signedUrl, name: file.name };
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const submit = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Entre para postar");
+      if (file && file.size > MAX_PDF_MB * 1024 * 1024) throw new Error(`Arquivo maior que ${MAX_PDF_MB}MB`);
+      const uploaded = await uploadFile();
       if (tab === "text") {
-        if (!content.trim()) throw new Error("Escreva algo");
+        if (!content.trim() && !uploaded) throw new Error("Escreva algo ou envie um arquivo");
         const { error } = await supabase.from("posts").insert({
           user_id: user.id, type: "text",
           title: title.trim() || null,
           content: content.trim(),
           image_url: image,
+          file_url: uploaded?.url ?? null,
+          file_name: uploaded?.name ?? null,
         });
         if (error) throw error;
       } else {
@@ -85,13 +114,15 @@ export function NewPostForm() {
           token_link: tLink.trim() || null,
           image_url: tImage,
           content: tContent.trim() || null,
+          file_url: uploaded?.url ?? null,
+          file_name: uploaded?.name ?? null,
         });
         if (error) throw error;
       }
     },
     onSuccess: () => {
       toast.success("Postado!");
-      setTitle(""); setContent(""); setImage(null);
+      setTitle(""); setContent(""); setImage(null); setFile(null);
       setTName(""); setTSymbol(""); setTContract(""); setTLink(""); setTImage(null); setTContent(""); setFetched(false);
       qc.invalidateQueries({ queryKey: ["feed"] });
     },
@@ -184,9 +215,34 @@ export function NewPostForm() {
         </TabsContent>
       </Tabs>
 
+      <div className="mt-4 space-y-2">
+        <label className="text-xs text-muted-foreground">Anexar PDF (livro, whitepaper, etc.) — até {MAX_PDF_MB}MB</label>
+        {file ? (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-2">
+            <FileText size={16} className="text-primary shrink-0" />
+            <span className="text-sm truncate flex-1">{file.name}</span>
+            <span className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)}MB</span>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setFile(null)}>
+              <X size={14} />
+            </Button>
+          </div>
+        ) : (
+          <Input
+            type="file"
+            accept="application/pdf,.pdf"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              if (f.size > MAX_PDF_MB * 1024 * 1024) { toast.error(`Arquivo maior que ${MAX_PDF_MB}MB`); return; }
+              setFile(f);
+            }}
+          />
+        )}
+      </div>
+
       <div className="flex justify-end mt-4">
-        <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
-          {submit.isPending ? "Publicando…" : "Publicar"}
+        <Button onClick={() => submit.mutate()} disabled={submit.isPending || uploading}>
+          {uploading ? "Enviando arquivo…" : submit.isPending ? "Publicando…" : "Publicar"}
         </Button>
       </div>
     </div>
