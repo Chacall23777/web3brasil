@@ -111,7 +111,7 @@ function TickerAdmin() {
       setNewAddr(""); setPreview(null);
       toast.success("Token adicionado");
       qc.invalidateQueries({ queryKey: ["ticker_tokens_admin"] });
-      qc.invalidateQueries({ queryKey: ["ticker-listed"] });
+      qc.invalidateQueries({ queryKey: ["ticker-all"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -124,7 +124,7 @@ function TickerAdmin() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ticker_tokens_admin"] });
-      qc.invalidateQueries({ queryKey: ["ticker-listed"] });
+      qc.invalidateQueries({ queryKey: ["ticker-all"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -137,9 +137,10 @@ function TickerAdmin() {
     onSuccess: () => {
       toast.success("Removido");
       qc.invalidateQueries({ queryKey: ["ticker_tokens_admin"] });
-      qc.invalidateQueries({ queryKey: ["ticker-listed"] });
+      qc.invalidateQueries({ queryKey: ["ticker-all"] });
     },
   });
+
 
   return (
     <div className="space-y-4">
