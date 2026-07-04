@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 export const Route = createFileRoute("/perfil")({
   component: PerfilPage,
@@ -21,6 +22,8 @@ function PerfilPage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [tg, setTg] = useState("");
+  const [x, setX] = useState("");
+  const [ig, setIg] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth" }); }, [user, loading, navigate]);
@@ -28,7 +31,9 @@ function PerfilPage() {
     if (profile) {
       setName(profile.display_name ?? "");
       setBio(profile.bio ?? "");
-      setTg(profile.telegram ?? "");
+      setTg(profile.telegram_handle ?? profile.telegram ?? "");
+      setX(profile.x_handle ?? "");
+      setIg(profile.instagram_handle ?? "");
       setAvatar(profile.avatar_url ?? null);
     }
   }, [profile]);
@@ -36,10 +41,12 @@ function PerfilPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!user) return;
-      const { error } = await supabase.from("profiles").update({
+      const { error } = await (supabase as any).from("profiles").update({
         display_name: name.trim() || "Usuário",
         bio: bio.trim() || null,
-        telegram: tg.trim() || null,
+        telegram_handle: tg.trim() || null,
+        x_handle: x.trim() || null,
+        instagram_handle: ig.trim() || null,
         avatar_url: avatar,
       }).eq("id", user.id);
       if (error) throw error;
@@ -58,7 +65,30 @@ function PerfilPage() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-6 space-y-6">
-      <h1 className="font-display text-2xl font-bold">Meu perfil</h1>
+      <h1 className="font-display text-2xl font-bold flex items-center gap-2">
+        Meu perfil {profile?.is_verified && <VerifiedBadge size={20} />}
+      </h1>
+
+      <div className="rounded-xl border bg-card p-4 space-y-2">
+        {profile?.is_verified ? (
+          <div className="text-sm flex items-center gap-2">
+            <VerifiedBadge size={16} /> Perfil verificado
+            <span className="text-xs text-muted-foreground">
+              ({profile?.verified_method === "admin" ? "por administrador" : "queima on-chain"})
+            </span>
+          </div>
+        ) : (
+          <div className="text-sm">
+            <div className="font-semibold">Ganhe o selo verificado</div>
+            <p className="text-xs text-muted-foreground">
+              Queime 3000 tokens do projeto na Solana pela sua carteira para ativar o selo amarelo.
+            </p>
+            <Link to="/verificacao">
+              <Button size="sm" className="mt-2">Verificar agora</Button>
+            </Link>
+          </div>
+        )}
+      </div>
 
       <div className="rounded-xl border bg-card p-4 space-y-4">
         <div className="flex items-center gap-4">
@@ -88,8 +118,21 @@ function PerfilPage() {
         <div className="space-y-2">
           <Label>Telegram</Label>
           <Input value={tg} onChange={(e) => setTg(e.target.value)} placeholder="@usuario ou https://t.me/usuario" maxLength={120} />
-          <p className="text-xs text-muted-foreground">Aparece como ícone clicável nas suas postagens.</p>
         </div>
+
+        <div className="space-y-2">
+          <Label>X (Twitter)</Label>
+          <Input value={x} onChange={(e) => setX(e.target.value)} placeholder="@usuario ou https://x.com/usuario" maxLength={120} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Instagram</Label>
+          <Input value={ig} onChange={(e) => setIg(e.target.value)} placeholder="@usuario ou https://instagram.com/usuario" maxLength={120} />
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          Suas redes aparecem como tags clicáveis ao lado do seu nome nas postagens.
+        </p>
 
         <Button onClick={() => save.mutate()} disabled={save.isPending}>
           {save.isPending ? "Salvando…" : "Salvar"}
