@@ -1,24 +1,9 @@
-import {
-  Connection,
-  PublicKey,
-  Transaction,
-} from "@solana/web3.js";
-import {
-  createBurnCheckedInstruction,
-  getAssociatedTokenAddressSync,
-  getAccount,
-  getMint,
-} from "@solana/spl-token";
-
+// Client-only: all Solana imports happen inside functions via dynamic import
+// so the SSR (Cloudflare Worker) bundle doesn't try to resolve @solana packages
+// that don't ship workerd exports.
 export const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
 export const VERIFICATION_MINT = "XhHLJpJtEHJucpYpAti2JvNs6eYsjeuFjRj9wvvaLDL";
 export const BURN_AMOUNT = 3000;
-
-export type SolanaProvider = {
-  publicKey: PublicKey;
-  signTransaction: (tx: Transaction) => Promise<Transaction>;
-  connect: () => Promise<{ publicKey: PublicKey }>;
-};
 
 export type WalletKind = "phantom" | "solflare" | "backpack";
 
@@ -31,7 +16,9 @@ export function detectWallet(kind: WalletKind): any | null {
   return null;
 }
 
-export async function connectWallet(kind: WalletKind): Promise<{ provider: any; publicKey: PublicKey }> {
+export async function connectWallet(
+  kind: WalletKind,
+): Promise<{ provider: any; publicKey: any; publicKeyStr: string }> {
   const provider = detectWallet(kind);
   if (!provider) {
     const urls: Record<WalletKind, string> = {
@@ -41,10 +28,12 @@ export async function connectWallet(kind: WalletKind): Promise<{ provider: any; 
     };
     throw new Error(`Carteira ${kind} não detectada. Instale em ${urls[kind]}`);
   }
+  const { PublicKey } = await import("@solana/web3.js");
   const resp = await provider.connect();
   const pk = resp?.publicKey ?? provider.publicKey;
   if (!pk) throw new Error("Não foi possível conectar à carteira.");
-  return { provider, publicKey: new PublicKey(pk.toString()) };
+  const publicKey = new PublicKey(pk.toString());
+  return { provider, publicKey, publicKeyStr: publicKey.toBase58() };
 }
 
 async function withRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
@@ -62,7 +51,9 @@ async function withRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
   );
 }
 
-export async function getTokenBalance(owner: PublicKey): Promise<number> {
+export async function getTokenBalance(owner: any): Promise<number> {
+  const { Connection, PublicKey } = await import("@solana/web3.js");
+  const { getAssociatedTokenAddressSync, getAccount, getMint } = await import("@solana/spl-token");
   const conn = new Connection(SOLANA_RPC, "confirmed");
   const mintPk = new PublicKey(VERIFICATION_MINT);
   const ata = getAssociatedTokenAddressSync(mintPk, owner, true);
@@ -73,24 +64,30 @@ export async function getTokenBalance(owner: PublicKey): Promise<number> {
     ]);
     return Number(acct.amount) / 10 ** mintInfo.decimals;
   } catch (e: any) {
-    // TokenAccountNotFound -> zero balance
     if (String(e?.message ?? "").includes("TokenAccountNotFound")) return 0;
     throw e;
   }
 }
 
-export async function burnTokens(provider: any, owner: PublicKey): Promise<string> {
+export async function burnTokens(provider: any, owner: any): Promise<string> {
+  const { Connection, PublicKey, Transaction } = await import("@solana/web3.js");
+  const { createBurnCheckedInstruction, getAssociatedTokenAddressSync, getMint } = await import(
+    "@solana/spl-token"
+  );
   const conn = new Connection(SOLANA_RPC, "confirmed");
   const mintPk = new PublicKey(VERIFICATION_MINT);
-  const ata = getAssociatedTokenAddressSync(mintPk, owner, true);
+  const ownerPk = owner instanceof PublicKey ? owner : new PublicKey(String(owner));
+  const ata = getAssociatedTokenAddressSync(mintPk, ownerPk, true);
   const mintInfo = await withRetry(() => getMint(conn, mintPk));
   const raw = BigInt(BURN_AMOUNT) * BigInt(10) ** BigInt(mintInfo.decimals);
 
-  const ix = createBurnCheckedInstruction(ata, mintPk, owner, raw, mintInfo.decimals);
+  const ix = createBurnCheckedInstruction(ata, mintPk, ownerPk, raw, mintInfo.decimals);
   const tx = new Transaction().add(ix);
-  const { blockhash, lastValidBlockHeight } = await withRetry(() => conn.getLatestBlockhash("confirmed"));
+  const { blockhash, lastValidBlockHeight } = await withRetry(() =>
+    conn.getLatestBlockhash("confirmed"),
+  );
   tx.recentBlockhash = blockhash;
-  tx.feePayer = owner;
+  tx.feePayer = ownerPk;
 
   const signed = await provider.signTransaction(tx);
   const sig = await withRetry(() =>

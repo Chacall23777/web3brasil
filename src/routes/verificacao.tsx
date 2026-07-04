@@ -58,8 +58,7 @@ function VerificationPage() {
     if (!provider || !wallet) return;
     setBurning(true);
     try {
-      const { PublicKey } = await import("@solana/web3.js");
-      const sig = await burnTokens(provider, new PublicKey(wallet));
+      const sig = await burnTokens(provider, wallet);
       toast.success("Queima confirmada. Validando…");
       await verifyBurnFn({ data: { signature: sig, wallet_address: wallet } });
       toast.success("Selo verificado concedido!");
