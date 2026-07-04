@@ -44,13 +44,17 @@ export type FeedPost = {
 };
 
 export function PostCard({ post, showComments = false }: { post: FeedPost; showComments?: boolean }) {
-  const { user, isAdmin } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const author = post.profiles;
   const postUrl = typeof window !== "undefined"
     ? `${window.location.origin}/post/${post.id}`
     : `/post/${post.id}`;
+
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(post.title ?? "");
+  const [editContent, setEditContent] = useState(post.content ?? "");
 
   const { data: likeInfo } = useQuery({
     queryKey: ["post-likes", post.id, user?.id ?? "anon"],
@@ -91,7 +95,25 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const canDelete = user && (user.id === post.user_id || isAdmin);
+  const saveEdit = useMutation({
+    mutationFn: async () => {
+      const patch: Record<string, any> = { content: editContent.trim() || null };
+      if (post.type === "text") patch.title = editTitle.trim() || null;
+      const { error } = await supabase.from("posts").update(patch).eq("id", post.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Postagem atualizada");
+      setEditing(false);
+      qc.invalidateQueries({ queryKey: ["feed"] });
+      qc.invalidateQueries({ queryKey: ["post", post.id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const isOwner = !!user && user.id === post.user_id;
+  const canEdit = (isOwner && !!profile?.is_verified) || isAdmin;
+  const canDelete = user && (isOwner || isAdmin);
 
   return (
     <article className="rounded-xl border bg-card overflow-hidden">
