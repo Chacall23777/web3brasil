@@ -22,6 +22,7 @@ type AuthCtx = {
   user: User | null;
   profile: Profile | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
 };
