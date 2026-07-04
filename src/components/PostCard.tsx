@@ -99,7 +99,7 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
     mutationFn: async () => {
       const patch: Record<string, any> = { content: editContent.trim() || null };
       if (post.type === "text") patch.title = editTitle.trim() || null;
-      const { error } = await supabase.from("posts").update(patch).eq("id", post.id);
+      const { error } = await (supabase as any).from("posts").update(patch).eq("id", post.id);
       if (error) throw error;
     },
     onSuccess: () => {
