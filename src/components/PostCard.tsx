@@ -132,6 +132,14 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
           </div>
           <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
             <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}</span>
+            {post.edited_at && (
+              <span
+                className="italic text-[10px] px-1.5 py-0.5 rounded bg-muted/50"
+                title={`Editado em ${new Date(post.edited_at).toLocaleString("pt-BR")}`}
+              >
+                editado · {formatDistanceToNow(new Date(post.edited_at), { addSuffix: true, locale: ptBR })}
+              </span>
+            )}
             {author && (
               <UserSocialTags
                 verified={!!author.is_verified}
