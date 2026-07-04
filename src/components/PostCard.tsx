@@ -162,6 +162,12 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
             <TelegramIcon width={16} height={16} />
           </a>
         )}
+        {canEdit && !editing && (
+          <button onClick={() => { setEditTitle(post.title ?? ""); setEditContent(post.content ?? ""); setEditing(true); }}
+            className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-muted" aria-label="Editar">
+            <Pencil size={16} />
+          </button>
+        )}
         {canDelete && (
           <button onClick={() => confirm("Apagar postagem?") && deletePost.mutate()}
             className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted" aria-label="Apagar">
@@ -171,7 +177,31 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
       </header>
 
       <div className="px-4 pb-3 space-y-3">
-        {post.type === "token" ? (
+        {editing ? (
+          <div className="space-y-2">
+            {post.type === "text" && (
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Título"
+              />
+            )}
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              rows={4}
+              placeholder="Conteúdo"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => saveEdit.mutate()} disabled={saveEdit.isPending}>
+                <Check size={14} /> Salvar
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
+                <X size={14} /> Cancelar
+              </Button>
+            </div>
+          </div>
+        ) : post.type === "token" ? (
           <>
             <div className="flex items-start gap-3">
               {post.image_url && (
