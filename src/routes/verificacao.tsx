@@ -79,7 +79,7 @@ function VerificationPage() {
           Selo de verificado {isVerified && <VerifiedBadge size={22} />}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Ganhe o selo amarelo de perfil verificado queimando {BURN_AMOUNT} tokens do projeto na rede Solana.
+          Ganhe o selo amarelo de perfil verificado queimando <strong>3.000 $LEGAL</strong> na rede Solana.
         </p>
       </div>
 
@@ -115,7 +115,7 @@ function VerificationPage() {
 
           {wallet && (
             <div className="rounded-xl border bg-card p-4 space-y-3">
-              <h2 className="font-semibold flex items-center gap-2"><Flame size={16} /> 2. Queime {BURN_AMOUNT} tokens</h2>
+              <h2 className="font-semibold flex items-center gap-2"><Flame size={16} /> 2. Queime 3.000 $LEGAL</h2>
               <p className="text-xs text-muted-foreground break-all">
                 Mint: <span className="font-mono">{VERIFICATION_MINT}</span>
               </p>
@@ -125,10 +125,10 @@ function VerificationPage() {
                 </div>
               ) : balance != null ? (
                 <div className="text-sm">
-                  Saldo atual: <span className="font-semibold">{balance.toLocaleString("pt-BR")}</span>
+                  Saldo atual: <span className="font-semibold">{balance.toLocaleString("pt-BR")} $LEGAL</span>
                   {balance < BURN_AMOUNT && (
                     <div className="text-destructive text-xs mt-1">
-                      Você precisa de pelo menos {BURN_AMOUNT} tokens para se verificar.
+                      Você precisa de pelo menos 3.000 $LEGAL para se verificar.
                     </div>
                   )}
                 </div>
