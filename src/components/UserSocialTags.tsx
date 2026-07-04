@@ -38,22 +38,34 @@ export function UserSocialTags({
   if (!items.length) return null;
 
   return (
-    <div className="flex items-center gap-1 flex-wrap">
+    <div className={verified ? "flex items-center gap-2 flex-wrap" : "flex items-center gap-1 flex-wrap"}>
       {items.map(({ kind, raw }) => {
         const { href, label } = normalize(kind, raw);
         const Icon = kind === "telegram" ? TelegramIcon : kind === "x" ? XIcon : InstagramIcon;
-        const base =
-          "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] transition-transform hover:scale-105";
-        const cls = verified
-          ? `${base} ${VERIFIED_STYLES[kind]} font-semibold animate-verified-pulse`
-          : `${base} bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground`;
+        if (verified) {
+          const iconSize = Math.max(size + 6, 18);
+          return (
+            <a
+              key={kind}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition-transform hover:scale-110 animate-verified-pulse ${VERIFIED_STYLES[kind]}`}
+              title={label}
+              aria-label={`${kind}: ${label}`}
+            >
+              <Icon width={iconSize} height={iconSize} />
+              <span className="hidden sm:inline">{label}</span>
+            </a>
+          );
+        }
         return (
           <a
             key={kind}
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className={cls}
+            className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-transform hover:scale-105"
             title={label}
           >
             <Icon width={size} height={size} />

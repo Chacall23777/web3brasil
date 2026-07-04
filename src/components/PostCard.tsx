@@ -3,10 +3,11 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Heart, MessageCircle, Trash2, FileText, Download } from "lucide-react";
+import { Heart, MessageCircle, Trash2, FileText, Download, Pencil, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { TokenChart } from "./TokenChart";
@@ -30,6 +31,7 @@ export type FeedPost = {
   file_url?: string | null;
   file_name?: string | null;
   created_at: string;
+  edited_at?: string | null;
   profiles: {
     display_name: string;
     avatar_url: string | null;
@@ -42,13 +44,17 @@ export type FeedPost = {
 };
 
 export function PostCard({ post, showComments = false }: { post: FeedPost; showComments?: boolean }) {
-  const { user, isAdmin } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const author = post.profiles;
   const postUrl = typeof window !== "undefined"
     ? `${window.location.origin}/post/${post.id}`
     : `/post/${post.id}`;
+
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(post.title ?? "");
+  const [editContent, setEditContent] = useState(post.content ?? "");
 
   const { data: likeInfo } = useQuery({
     queryKey: ["post-likes", post.id, user?.id ?? "anon"],
@@ -89,7 +95,25 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const canDelete = user && (user.id === post.user_id || isAdmin);
+  const saveEdit = useMutation({
+    mutationFn: async () => {
+      const patch: Record<string, any> = { content: editContent.trim() || null };
+      if (post.type === "text") patch.title = editTitle.trim() || null;
+      const { error } = await (supabase as any).from("posts").update(patch).eq("id", post.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Postagem atualizada");
+      setEditing(false);
+      qc.invalidateQueries({ queryKey: ["feed"] });
+      qc.invalidateQueries({ queryKey: ["post", post.id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const isOwner = !!user && user.id === post.user_id;
+  const canEdit = (isOwner && !!profile?.is_verified) || isAdmin;
+  const canDelete = user && (isOwner || isAdmin);
 
   return (
     <article className="rounded-xl border bg-card overflow-hidden">
@@ -108,6 +132,14 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
           </div>
           <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
             <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}</span>
+            {post.edited_at && (
+              <span
+                className="italic text-[10px] px-1.5 py-0.5 rounded bg-muted/50"
+                title={`Editado em ${new Date(post.edited_at).toLocaleString("pt-BR")}`}
+              >
+                editado · {formatDistanceToNow(new Date(post.edited_at), { addSuffix: true, locale: ptBR })}
+              </span>
+            )}
             {author && (
               <UserSocialTags
                 verified={!!author.is_verified}
@@ -130,6 +162,12 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
             <TelegramIcon width={16} height={16} />
           </a>
         )}
+        {canEdit && !editing && (
+          <button onClick={() => { setEditTitle(post.title ?? ""); setEditContent(post.content ?? ""); setEditing(true); }}
+            className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-muted" aria-label="Editar">
+            <Pencil size={16} />
+          </button>
+        )}
         {canDelete && (
           <button onClick={() => confirm("Apagar postagem?") && deletePost.mutate()}
             className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted" aria-label="Apagar">
@@ -139,7 +177,31 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
       </header>
 
       <div className="px-4 pb-3 space-y-3">
-        {post.type === "token" ? (
+        {editing ? (
+          <div className="space-y-2">
+            {post.type === "text" && (
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Título"
+              />
+            )}
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              rows={4}
+              placeholder="Conteúdo"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => saveEdit.mutate()} disabled={saveEdit.isPending}>
+                <Check size={14} /> Salvar
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
+                <X size={14} /> Cancelar
+              </Button>
+            </div>
+          </div>
+        ) : post.type === "token" ? (
           <>
             <div className="flex items-start gap-3">
               {post.image_url && (

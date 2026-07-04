@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
-import { Trash2, Loader2, Search, ShieldCheck, ShieldOff } from "lucide-react";
+import { Trash2, Loader2, Search, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, Crown } from "lucide-react";
 import { lookupToken, getUsdBrlRate, formatBRL, type TokenInfo } from "@/lib/token-lookup";
-import { adminSearchUsers, adminSetVerified } from "@/lib/verification.functions";
+import { adminSearchUsers, adminSetVerified, adminPromoteToAdmin, adminDemoteFromAdmin } from "@/lib/verification.functions";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 export const Route = createFileRoute("/admin")({
@@ -52,11 +52,14 @@ function AdminPage() {
 }
 
 function VerifiedAdmin() {
+  const { isSuperAdmin } = useAuth();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const searchFn = useServerFn(adminSearchUsers);
   const setVerifiedFn = useServerFn(adminSetVerified);
+  const promoteFn = useServerFn(adminPromoteToAdmin);
+  const demoteFn = useServerFn(adminDemoteFromAdmin);
 
   const doSearch = async () => {
     const term = q.trim();
@@ -86,6 +89,27 @@ function VerifiedAdmin() {
     }
   };
 
+  const changeRole = async (u: any, action: "promote" | "demote") => {
+    const msg = action === "promote"
+      ? `Promover ${u.display_name} a admin?`
+      : `Rebaixar ${u.display_name} de admin para usuário comum?`;
+    if (!confirm(msg)) return;
+    try {
+      if (action === "promote") await promoteFn({ data: { target_user_id: u.id } });
+      else await demoteFn({ data: { target_user_id: u.id } });
+      toast.success("Atualizado");
+      setResults((prev) => prev.map((p) => {
+        if (p.id !== u.id) return p;
+        const roles = new Set<string>(p.roles ?? []);
+        if (action === "promote") roles.add("admin");
+        else roles.delete("admin");
+        return { ...p, roles: Array.from(roles) };
+      }));
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border bg-card p-4 space-y-3">
@@ -105,45 +129,77 @@ function VerifiedAdmin() {
       </div>
 
       <div className="rounded-xl border bg-card divide-y">
-        {results.map((u) => (
-          <div key={u.id} className="p-3 flex items-center gap-3">
-            {u.avatar_url ? (
-              <img src={u.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
-                {(u.display_name ?? "?")[0]}
+        {results.map((u) => {
+          const roles: string[] = u.roles ?? [];
+          const isSuper = roles.includes("super_admin");
+          const isAdm = roles.includes("admin");
+          return (
+            <div key={u.id} className="p-3 flex items-center gap-3 flex-wrap">
+              {u.avatar_url ? (
+                <img src={u.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+              ) : (
+                <div className="h-10 w-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
+                  {(u.display_name ?? "?")[0]}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate flex items-center gap-1 flex-wrap">
+                  {u.display_name}
+                  {u.is_verified && <VerifiedBadge size={14} />}
+                  {isSuper && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-600 border border-yellow-500/40">
+                      <Crown size={10} /> super_admin
+                    </span>
+                  )}
+                  {isAdm && !isSuper && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/30">
+                      admin
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {u.email ?? ""}{u.email && (u.solana_wallet || u.telegram_handle) ? " · " : ""}
+                  {u.solana_wallet ? <span className="font-mono">{u.solana_wallet.slice(0, 6)}…{u.solana_wallet.slice(-4)}</span> : ""}
+                  {u.telegram_handle ? ` · tg:${u.telegram_handle}` : ""}
+                  {u.x_handle ? ` · x:${u.x_handle}` : ""}
+                </div>
               </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate flex items-center gap-1">
-                {u.display_name}
-                {u.is_verified && <VerifiedBadge size={14} />}
-              </div>
-              <div className="text-xs text-muted-foreground truncate">
-                {u.email ?? ""}{u.email && (u.solana_wallet || u.telegram_handle) ? " · " : ""}
-                {u.solana_wallet ? <span className="font-mono">{u.solana_wallet.slice(0, 6)}…{u.solana_wallet.slice(-4)}</span> : ""}
-                {u.telegram_handle ? ` · tg:${u.telegram_handle}` : ""}
-                {u.x_handle ? ` · x:${u.x_handle}` : ""}
-              </div>
+              {u.is_verified ? (
+                <Button size="sm" variant="outline" onClick={() => toggle(u, false)}>
+                  <ShieldOff size={14} /> Revogar
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => toggle(u, true)}>
+                  <ShieldCheck size={14} /> Conceder
+                </Button>
+              )}
+              {isSuperAdmin && !isSuper && (
+                isAdm ? (
+                  <Button size="sm" variant="outline" onClick={() => changeRole(u, "demote")}>
+                    <ArrowDown size={14} /> Rebaixar
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="secondary" onClick={() => changeRole(u, "promote")}>
+                    <ArrowUp size={14} /> Promover a admin
+                  </Button>
+                )
+              )}
             </div>
-            {u.is_verified ? (
-              <Button size="sm" variant="outline" onClick={() => toggle(u, false)}>
-                <ShieldOff size={14} /> Revogar
-              </Button>
-            ) : (
-              <Button size="sm" onClick={() => toggle(u, true)}>
-                <ShieldCheck size={14} /> Conceder
-              </Button>
-            )}
-          </div>
-        ))}
+          );
+        })}
         {results.length === 0 && (
           <div className="p-6 text-center text-sm text-muted-foreground">Nenhum resultado. Faça uma busca acima.</div>
         )}
       </div>
+      {!isSuperAdmin && (
+        <p className="text-xs text-muted-foreground">
+          Somente super_admin pode promover ou rebaixar administradores.
+        </p>
+      )}
     </div>
   );
 }
+
 
 
 

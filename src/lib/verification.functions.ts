@@ -135,19 +135,32 @@ export const verifyBurn = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+async function checkRole(
+  ctx: { supabase: any; userId: string },
+  role: "admin" | "super_admin",
+): Promise<boolean> {
+  const { data } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: role });
+  return !!data;
+}
+
+async function requireAdminLike(ctx: { supabase: any; userId: string }): Promise<void> {
+  const [isAdmin, isSuper] = await Promise.all([checkRole(ctx, "admin"), checkRole(ctx, "super_admin")]);
+  if (!isAdmin && !isSuper) throw new Error("Somente administradores.");
+}
+
+async function requireSuperAdmin(ctx: { supabase: any; userId: string }): Promise<void> {
+  const isSuper = await checkRole(ctx, "super_admin");
+  if (!isSuper) throw new Error("Somente super_admin.");
+}
+
 export const adminSearchUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ q: z.string().trim().min(1).max(120) }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await (context.supabase as any).rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Somente administradores.");
+    await requireAdminLike(context);
 
     const q = data.q;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Search profiles by display_name/wallet/handles
     const like = `%${q}%`;
     const { data: profs } = await (supabaseAdmin as any)
       .from("profiles")
@@ -157,7 +170,6 @@ export const adminSearchUsers = createServerFn({ method: "POST" })
       )
       .limit(25);
 
-    // Also search by email through auth admin (best-effort)
     let emailMatches: Array<{ id: string; email: string | null }> = [];
     try {
       const list = await (supabaseAdmin as any).auth.admin.listUsers({ page: 1, perPage: 200 });
@@ -181,12 +193,30 @@ export const adminSearchUsers = createServerFn({ method: "POST" })
       extra = extraProfs ?? [];
     }
 
-    // Merge unique
     const byId = new Map<string, any>();
     for (const p of [...(profs ?? []), ...extra]) byId.set(p.id, p);
-    // Attach emails
+    const ids = Array.from(byId.keys());
+
+    // Fetch roles for all matched users
+    let rolesById = new Map<string, string[]>();
+    if (ids.length) {
+      const { data: rolesRows } = await (supabaseAdmin as any)
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", ids);
+      for (const r of rolesRows ?? []) {
+        const arr = rolesById.get(r.user_id) ?? [];
+        arr.push(r.role);
+        rolesById.set(r.user_id, arr);
+      }
+    }
+
     const emailMap = new Map(emailMatches.map((e) => [e.id, e.email]));
-    const results = Array.from(byId.values()).map((p) => ({ ...p, email: emailMap.get(p.id) ?? null }));
+    const results = Array.from(byId.values()).map((p) => ({
+      ...p,
+      email: emailMap.get(p.id) ?? null,
+      roles: rolesById.get(p.id) ?? [],
+    }));
     return { results };
   });
 
@@ -196,11 +226,7 @@ export const adminSetVerified = createServerFn({ method: "POST" })
     z.object({ target_user_id: z.string().uuid(), verified: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await (context.supabase as any).rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Somente administradores.");
+    await requireAdminLike(context);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const patch = data.verified
@@ -232,3 +258,75 @@ export const adminSetVerified = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+export const adminPromoteToAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ target_user_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+    if (data.target_user_id === context.userId) {
+      throw new Error("Não é possível alterar seu próprio nível.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Don't touch super_admins
+    const { data: existing } = await (supabaseAdmin as any)
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.target_user_id);
+    const roles = (existing ?? []).map((r: any) => r.role);
+    if (roles.includes("super_admin")) throw new Error("O alvo é super_admin.");
+    if (roles.includes("admin")) throw new Error("Usuário já é admin.");
+
+    const { error } = await (supabaseAdmin as any)
+      .from("user_roles")
+      .insert({ user_id: data.target_user_id, role: "admin" });
+    if (error) throw new Error(error.message);
+
+    await (supabaseAdmin as any).from("admin_actions").insert({
+      admin_id: context.userId,
+      target_user_id: data.target_user_id,
+      action: "promote_admin",
+      details: null,
+    });
+    return { ok: true };
+  });
+
+export const adminDemoteFromAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ target_user_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+    if (data.target_user_id === context.userId) {
+      throw new Error("Não é possível rebaixar a si mesmo.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: existing } = await (supabaseAdmin as any)
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.target_user_id);
+    const roles = (existing ?? []).map((r: any) => r.role);
+    if (roles.includes("super_admin")) throw new Error("Não é possível rebaixar um super_admin.");
+    if (!roles.includes("admin")) throw new Error("Usuário não é admin.");
+
+    const { error } = await (supabaseAdmin as any)
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.target_user_id)
+      .eq("role", "admin");
+    if (error) throw new Error(error.message);
+
+    await (supabaseAdmin as any).from("admin_actions").insert({
+      admin_id: context.userId,
+      target_user_id: data.target_user_id,
+      action: "demote_admin",
+      details: null,
+    });
+    return { ok: true };
+  });
+
