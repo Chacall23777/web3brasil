@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
@@ -158,8 +185,17 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          instagram_handle: string | null
+          is_verified: boolean
+          solana_wallet: string | null
           telegram: string | null
+          telegram_handle: string | null
           updated_at: string
+          verified_at: string | null
+          verified_by_admin_id: string | null
+          verified_method: string | null
+          verified_tx_signature: string | null
+          x_handle: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -167,8 +203,17 @@ export type Database = {
           created_at?: string
           display_name?: string
           id: string
+          instagram_handle?: string | null
+          is_verified?: boolean
+          solana_wallet?: string | null
           telegram?: string | null
+          telegram_handle?: string | null
           updated_at?: string
+          verified_at?: string | null
+          verified_by_admin_id?: string | null
+          verified_method?: string | null
+          verified_tx_signature?: string | null
+          x_handle?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -176,8 +221,17 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          instagram_handle?: string | null
+          is_verified?: boolean
+          solana_wallet?: string | null
           telegram?: string | null
+          telegram_handle?: string | null
           updated_at?: string
+          verified_at?: string | null
+          verified_by_admin_id?: string | null
+          verified_method?: string | null
+          verified_tx_signature?: string | null
+          x_handle?: string | null
         }
         Relationships: []
       }
@@ -318,7 +372,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user"
