@@ -12,12 +12,12 @@ let _web3: any | undefined;
 let _spl: any | undefined;
 async function loadWeb3(): Promise<any> {
   if (_web3) return _web3;
-  _web3 = await import(/* @vite-ignore */ WEB3_URL);
+  _web3 = (await import(/* @vite-ignore */ WEB3_URL)) as any;
   return _web3;
 }
 async function loadSpl(): Promise<any> {
   if (_spl) return _spl;
-  _spl = await import(/* @vite-ignore */ SPL_URL);
+  _spl = (await import(/* @vite-ignore */ SPL_URL)) as any;
   return _spl;
 }
 
