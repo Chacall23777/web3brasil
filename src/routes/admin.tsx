@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
-import { Trash2, Loader2, Search, ShieldCheck, ShieldOff } from "lucide-react";
+import { Trash2, Loader2, Search, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, Crown } from "lucide-react";
 import { lookupToken, getUsdBrlRate, formatBRL, type TokenInfo } from "@/lib/token-lookup";
-import { adminSearchUsers, adminSetVerified } from "@/lib/verification.functions";
+import { adminSearchUsers, adminSetVerified, adminPromoteToAdmin, adminDemoteFromAdmin } from "@/lib/verification.functions";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 export const Route = createFileRoute("/admin")({
