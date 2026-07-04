@@ -1,23 +1,22 @@
-// Client-only. Imports @solana packages from esm.sh at runtime with a
-// @vite-ignore hint so the SSR (Cloudflare Worker) bundle never tries to
-// resolve them — @solana/codecs has no workerd export condition.
+// Client-only. Solana wallet/token libs are bundled from npm (lockfile-pinned)
+// and lazy-loaded via dynamic import so the SSR/Worker bundle DCEs the branch
+// (import.meta.env.SSR is a compile-time constant).
 export const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
 export const VERIFICATION_MINT = "XhHLJpJtEHJucpYpAti2JvNs6eYsjeuFjRj9wvvaLDL";
 export const BURN_AMOUNT = 3000;
 
-const WEB3_URL = "https://esm.sh/@solana/web3.js@1.98.4";
-const SPL_URL = "https://esm.sh/@solana/spl-token@0.4.14?deps=@solana/web3.js@1.98.4";
-
 let _web3: any | undefined;
 let _spl: any | undefined;
 async function loadWeb3(): Promise<any> {
+  if (import.meta.env.SSR) throw new Error("Solana libs are browser-only");
   if (_web3) return _web3;
-  _web3 = (await import(/* @vite-ignore */ WEB3_URL)) as any;
+  _web3 = await import("@solana/web3.js");
   return _web3;
 }
 async function loadSpl(): Promise<any> {
+  if (import.meta.env.SSR) throw new Error("Solana libs are browser-only");
   if (_spl) return _spl;
-  _spl = (await import(/* @vite-ignore */ SPL_URL)) as any;
+  _spl = await import("@solana/spl-token");
   return _spl;
 }
 
