@@ -77,6 +77,7 @@ export function Layout() {
           <Link to="/" className="px-3 py-1.5 rounded-md hover:bg-muted" activeOptions={{ exact: true }} activeProps={{ className: "bg-muted" }}>Início</Link>
           <Link to="/comunidade" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Comunidade</Link>
           <Link to="/equipe" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Equipe</Link>
+          {user && <Link to="/verificacao" className="px-3 py-1.5 rounded-md hover:bg-muted text-yellow-500" activeProps={{ className: "bg-muted" }}>Verificar</Link>}
           {isAdmin && <Link to="/admin" className="px-3 py-1.5 rounded-md hover:bg-muted text-primary" activeProps={{ className: "bg-muted" }}>Admin</Link>}
         </nav>
       </header>
