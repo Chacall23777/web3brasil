@@ -110,6 +110,7 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
             <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}</span>
             {author && (
               <UserSocialTags
+                verified={!!author.is_verified}
                 handles={{
                   telegram_handle: author.telegram_handle ?? author.telegram ?? null,
                   x_handle: author.x_handle ?? null,
