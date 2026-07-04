@@ -1,9 +1,25 @@
-// Client-only: all Solana imports happen inside functions via dynamic import
-// so the SSR (Cloudflare Worker) bundle doesn't try to resolve @solana packages
-// that don't ship workerd exports.
+// Client-only. Imports @solana packages from esm.sh at runtime with a
+// @vite-ignore hint so the SSR (Cloudflare Worker) bundle never tries to
+// resolve them — @solana/codecs has no workerd export condition.
 export const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
 export const VERIFICATION_MINT = "XhHLJpJtEHJucpYpAti2JvNs6eYsjeuFjRj9wvvaLDL";
 export const BURN_AMOUNT = 3000;
+
+const WEB3_URL = "https://esm.sh/@solana/web3.js@1.98.4";
+const SPL_URL = "https://esm.sh/@solana/spl-token@0.4.14?deps=@solana/web3.js@1.98.4";
+
+let _web3: any | undefined;
+let _spl: any | undefined;
+async function loadWeb3(): Promise<any> {
+  if (_web3) return _web3;
+  _web3 = await import(/* @vite-ignore */ WEB3_URL);
+  return _web3;
+}
+async function loadSpl(): Promise<any> {
+  if (_spl) return _spl;
+  _spl = await import(/* @vite-ignore */ SPL_URL);
+  return _spl;
+}
 
 export type WalletKind = "phantom" | "solflare" | "backpack";
 
@@ -18,7 +34,7 @@ export function detectWallet(kind: WalletKind): any | null {
 
 export async function connectWallet(
   kind: WalletKind,
-): Promise<{ provider: any; publicKey: any; publicKeyStr: string }> {
+): Promise<{ provider: any; publicKeyStr: string }> {
   const provider = detectWallet(kind);
   if (!provider) {
     const urls: Record<WalletKind, string> = {
@@ -28,12 +44,12 @@ export async function connectWallet(
     };
     throw new Error(`Carteira ${kind} não detectada. Instale em ${urls[kind]}`);
   }
-  const { PublicKey } = await import("@solana/web3.js");
+  const { PublicKey } = await loadWeb3();
   const resp = await provider.connect();
   const pk = resp?.publicKey ?? provider.publicKey;
   if (!pk) throw new Error("Não foi possível conectar à carteira.");
-  const publicKey = new PublicKey(pk.toString());
-  return { provider, publicKey, publicKeyStr: publicKey.toBase58() };
+  const publicKeyStr = new PublicKey(pk.toString()).toBase58();
+  return { provider, publicKeyStr };
 }
 
 async function withRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
@@ -51,12 +67,13 @@ async function withRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
   );
 }
 
-export async function getTokenBalance(owner: any): Promise<number> {
-  const { Connection, PublicKey } = await import("@solana/web3.js");
-  const { getAssociatedTokenAddressSync, getAccount, getMint } = await import("@solana/spl-token");
+export async function getTokenBalance(ownerBase58: string): Promise<number> {
+  const { Connection, PublicKey } = await loadWeb3();
+  const { getAssociatedTokenAddressSync, getAccount, getMint } = await loadSpl();
   const conn = new Connection(SOLANA_RPC, "confirmed");
   const mintPk = new PublicKey(VERIFICATION_MINT);
-  const ata = getAssociatedTokenAddressSync(mintPk, owner, true);
+  const ownerPk = new PublicKey(ownerBase58);
+  const ata = getAssociatedTokenAddressSync(mintPk, ownerPk, true);
   try {
     const [mintInfo, acct] = await Promise.all([
       withRetry(() => getMint(conn, mintPk)),
@@ -69,14 +86,12 @@ export async function getTokenBalance(owner: any): Promise<number> {
   }
 }
 
-export async function burnTokens(provider: any, owner: any): Promise<string> {
-  const { Connection, PublicKey, Transaction } = await import("@solana/web3.js");
-  const { createBurnCheckedInstruction, getAssociatedTokenAddressSync, getMint } = await import(
-    "@solana/spl-token"
-  );
+export async function burnTokens(provider: any, ownerBase58: string): Promise<string> {
+  const { Connection, PublicKey, Transaction } = await loadWeb3();
+  const { createBurnCheckedInstruction, getAssociatedTokenAddressSync, getMint } = await loadSpl();
   const conn = new Connection(SOLANA_RPC, "confirmed");
   const mintPk = new PublicKey(VERIFICATION_MINT);
-  const ownerPk = owner instanceof PublicKey ? owner : new PublicKey(String(owner));
+  const ownerPk = new PublicKey(ownerBase58);
   const ata = getAssociatedTokenAddressSync(mintPk, ownerPk, true);
   const mintInfo = await withRetry(() => getMint(conn, mintPk));
   const raw = BigInt(BURN_AMOUNT) * BigInt(10) ** BigInt(mintInfo.decimals);
