@@ -125,10 +125,10 @@ function VerificationPage() {
                 </div>
               ) : balance != null ? (
                 <div className="text-sm">
-                  Saldo atual: <span className="font-semibold">{balance.toLocaleString("pt-BR")}</span>
+                  Saldo atual: <span className="font-semibold">{balance.toLocaleString("pt-BR")} $LEGAL</span>
                   {balance < BURN_AMOUNT && (
                     <div className="text-destructive text-xs mt-1">
-                      Você precisa de pelo menos {BURN_AMOUNT} tokens para se verificar.
+                      Você precisa de pelo menos 3.000 $LEGAL para se verificar.
                     </div>
                   )}
                 </div>
