@@ -14,7 +14,23 @@ function normalize(kind: "telegram" | "x" | "instagram", raw: string): { href: s
   return { href: `https://instagram.com/${v}`, label: `@${v}` };
 }
 
-export function UserSocialTags({ handles, size = 12 }: { handles: Handles; size?: number }) {
+const VERIFIED_STYLES: Record<"telegram" | "x" | "instagram", string> = {
+  telegram:
+    "bg-gradient-to-r from-sky-400 to-blue-600 text-white border-sky-300 shadow-[0_0_10px_rgba(56,189,248,0.6)]",
+  x: "bg-gradient-to-r from-neutral-800 to-black text-white border-neutral-500 shadow-[0_0_10px_rgba(255,255,255,0.35)]",
+  instagram:
+    "bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white border-pink-300 shadow-[0_0_10px_rgba(236,72,153,0.6)]",
+};
+
+export function UserSocialTags({
+  handles,
+  size = 12,
+  verified = false,
+}: {
+  handles: Handles;
+  size?: number;
+  verified?: boolean;
+}) {
   const items: Array<{ kind: "telegram" | "x" | "instagram"; raw: string }> = [];
   if (handles.telegram_handle) items.push({ kind: "telegram", raw: handles.telegram_handle });
   if (handles.x_handle) items.push({ kind: "x", raw: handles.x_handle });
@@ -26,13 +42,18 @@ export function UserSocialTags({ handles, size = 12 }: { handles: Handles; size?
       {items.map(({ kind, raw }) => {
         const { href, label } = normalize(kind, raw);
         const Icon = kind === "telegram" ? TelegramIcon : kind === "x" ? XIcon : InstagramIcon;
+        const base =
+          "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] transition-transform hover:scale-105";
+        const cls = verified
+          ? `${base} ${VERIFIED_STYLES[kind]} font-semibold animate-verified-pulse`
+          : `${base} bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground`;
         return (
           <a
             key={kind}
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-full border bg-muted/40 hover:bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+            className={cls}
             title={label}
           >
             <Icon width={size} height={size} />

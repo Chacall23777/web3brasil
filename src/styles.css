@@ -71,3 +71,11 @@
     letter-spacing: -0.01em;
   }
 }
+
+@keyframes verified-pulse {
+  0%, 100% { filter: brightness(1) saturate(1); transform: scale(1); }
+  50% { filter: brightness(1.2) saturate(1.4); transform: scale(1.05); }
+}
+@utility animate-verified-pulse {
+  animation: verified-pulse 1.6s ease-in-out infinite;
+}
