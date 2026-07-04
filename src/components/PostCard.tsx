@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { TokenChart } from "./TokenChart";
 import { ShareButtons } from "./ShareButtons";
 import { TelegramIcon } from "./SocialIcons";
+import { VerifiedBadge } from "./VerifiedBadge";
+import { UserSocialTags } from "./UserSocialTags";
 
 export type FeedPost = {
   id: string;
@@ -32,6 +34,10 @@ export type FeedPost = {
     display_name: string;
     avatar_url: string | null;
     telegram: string | null;
+    telegram_handle?: string | null;
+    x_handle?: string | null;
+    instagram_handle?: string | null;
+    is_verified?: boolean | null;
   } | null;
 };
 
@@ -96,9 +102,21 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium truncate">{author?.display_name ?? "Usuário"}</div>
-          <div className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}
+          <div className="text-sm font-medium truncate flex items-center gap-1">
+            <span className="truncate">{author?.display_name ?? "Usuário"}</span>
+            {author?.is_verified && <VerifiedBadge size={14} />}
+          </div>
+          <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+            <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}</span>
+            {author && (
+              <UserSocialTags
+                handles={{
+                  telegram_handle: author.telegram_handle ?? author.telegram ?? null,
+                  x_handle: author.x_handle ?? null,
+                  instagram_handle: author.instagram_handle ?? null,
+                }}
+              />
+            )}
           </div>
         </div>
         {author?.telegram && (
@@ -212,7 +230,7 @@ function Comments({ postId }: { postId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comments")
-        .select("id, content, created_at, user_id, profiles(display_name, avatar_url)")
+        .select("id, content, created_at, user_id, profiles(display_name, avatar_url, is_verified, telegram_handle, x_handle, instagram_handle)")
         .eq("post_id", postId)
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -249,10 +267,21 @@ function Comments({ postId }: { postId: string }) {
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">{c.profiles?.display_name ?? "Usuário"}</span>
-                {" · "}
-                {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: ptBR })}
+              <div className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
+                <span className="font-medium text-foreground inline-flex items-center gap-1">
+                  {c.profiles?.display_name ?? "Usuário"}
+                  {c.profiles?.is_verified && <VerifiedBadge size={12} />}
+                </span>
+                <span>· {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: ptBR })}</span>
+                {c.profiles && (
+                  <UserSocialTags
+                    handles={{
+                      telegram_handle: c.profiles.telegram_handle ?? null,
+                      x_handle: c.profiles.x_handle ?? null,
+                      instagram_handle: c.profiles.instagram_handle ?? null,
+                    }}
+                  />
+                )}
               </div>
               <div className="text-sm whitespace-pre-wrap">{c.content}</div>
             </div>

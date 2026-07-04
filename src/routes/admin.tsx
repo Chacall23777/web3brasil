@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -8,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2, Loader2, Search, ShieldCheck, ShieldOff } from "lucide-react";
 import { lookupToken, getUsdBrlRate, formatBRL, type TokenInfo } from "@/lib/token-lookup";
+import { adminSearchUsers, adminSetVerified } from "@/lib/verification.functions";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -31,17 +34,113 @@ function AdminPage() {
     <div className="mx-auto max-w-4xl px-4 py-6 space-y-6">
       <h1 className="font-display text-2xl font-bold">Admin</h1>
       <Tabs defaultValue="social">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="social">Redes sociais</TabsTrigger>
           <TabsTrigger value="team">Equipe</TabsTrigger>
           <TabsTrigger value="posts">Postagens</TabsTrigger>
           <TabsTrigger value="ticker">Cotação (Ticker)</TabsTrigger>
+          <TabsTrigger value="verified">Verificados</TabsTrigger>
         </TabsList>
         <TabsContent value="social" className="mt-4"><SocialForm /></TabsContent>
         <TabsContent value="team" className="mt-4"><TeamAdmin /></TabsContent>
         <TabsContent value="posts" className="mt-4"><PostsAdmin /></TabsContent>
         <TabsContent value="ticker" className="mt-4"><TickerAdmin /></TabsContent>
+        <TabsContent value="verified" className="mt-4"><VerifiedAdmin /></TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function VerifiedAdmin() {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const searchFn = useServerFn(adminSearchUsers);
+  const setVerifiedFn = useServerFn(adminSetVerified);
+
+  const doSearch = async () => {
+    const term = q.trim();
+    if (!term) return;
+    setLoading(true);
+    try {
+      const { results } = await searchFn({ data: { q: term } });
+      setResults(results ?? []);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha na busca");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggle = async (u: any, verified: boolean) => {
+    const msg = verified
+      ? `Conceder selo verificado a ${u.display_name}?`
+      : `Revogar selo verificado de ${u.display_name}?`;
+    if (!confirm(msg)) return;
+    try {
+      await setVerifiedFn({ data: { target_user_id: u.id, verified } });
+      toast.success("Atualizado");
+      setResults((prev) => prev.map((p) => (p.id === u.id ? { ...p, is_verified: verified, verified_method: verified ? "admin" : null } : p)));
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <h3 className="font-semibold">Buscar usuário</h3>
+        <p className="text-xs text-muted-foreground">Busque por nome, e-mail, endereço de carteira Solana ou handles de rede social.</p>
+        <div className="flex gap-2">
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && doSearch()}
+            placeholder="ex: joao@…, @user, endereço da carteira"
+          />
+          <Button onClick={doSearch} disabled={loading}>
+            {loading ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />}
+          </Button>
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-card divide-y">
+        {results.map((u) => (
+          <div key={u.id} className="p-3 flex items-center gap-3">
+            {u.avatar_url ? (
+              <img src={u.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
+                {(u.display_name ?? "?")[0]}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium truncate flex items-center gap-1">
+                {u.display_name}
+                {u.is_verified && <VerifiedBadge size={14} />}
+              </div>
+              <div className="text-xs text-muted-foreground truncate">
+                {u.email ?? ""}{u.email && (u.solana_wallet || u.telegram_handle) ? " · " : ""}
+                {u.solana_wallet ? <span className="font-mono">{u.solana_wallet.slice(0, 6)}…{u.solana_wallet.slice(-4)}</span> : ""}
+                {u.telegram_handle ? ` · tg:${u.telegram_handle}` : ""}
+                {u.x_handle ? ` · x:${u.x_handle}` : ""}
+              </div>
+            </div>
+            {u.is_verified ? (
+              <Button size="sm" variant="outline" onClick={() => toggle(u, false)}>
+                <ShieldOff size={14} /> Revogar
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => toggle(u, true)}>
+                <ShieldCheck size={14} /> Conceder
+              </Button>
+            )}
+          </div>
+        ))}
+        {results.length === 0 && (
+          <div className="p-6 text-center text-sm text-muted-foreground">Nenhum resultado. Faça uma busca acima.</div>
+        )}
+      </div>
     </div>
   );
 }
