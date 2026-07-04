@@ -79,7 +79,7 @@ function VerificationPage() {
           Selo de verificado {isVerified && <VerifiedBadge size={22} />}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Ganhe o selo amarelo de perfil verificado queimando {BURN_AMOUNT} tokens do projeto na rede Solana.
+          Ganhe o selo amarelo de perfil verificado queimando <strong>3.000 $LEGAL</strong> na rede Solana.
         </p>
       </div>
 
