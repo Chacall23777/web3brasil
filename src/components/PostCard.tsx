@@ -276,6 +276,7 @@ function Comments({ postId }: { postId: string }) {
                 <span>· {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: ptBR })}</span>
                 {c.profiles && (
                   <UserSocialTags
+                    verified={!!c.profiles.is_verified}
                     handles={{
                       telegram_handle: c.profiles.telegram_handle ?? null,
                       x_handle: c.profiles.x_handle ?? null,
