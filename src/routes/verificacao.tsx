@@ -115,7 +115,7 @@ function VerificationPage() {
 
           {wallet && (
             <div className="rounded-xl border bg-card p-4 space-y-3">
-              <h2 className="font-semibold flex items-center gap-2"><Flame size={16} /> 2. Queime {BURN_AMOUNT} tokens</h2>
+              <h2 className="font-semibold flex items-center gap-2"><Flame size={16} /> 2. Queime 3.000 $LEGAL</h2>
               <p className="text-xs text-muted-foreground break-all">
                 Mint: <span className="font-mono">{VERIFICATION_MINT}</span>
               </p>
