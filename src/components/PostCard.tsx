@@ -31,6 +31,7 @@ export type FeedPost = {
   file_url?: string | null;
   file_name?: string | null;
   created_at: string;
+  edited_at?: string | null;
   profiles: {
     display_name: string;
     avatar_url: string | null;
