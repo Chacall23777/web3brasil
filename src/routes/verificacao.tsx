@@ -41,11 +41,11 @@ function VerificationPage() {
 
   const doConnect = async (kind: WalletKind) => {
     try {
-      const { provider: p, publicKey } = await connectWallet(kind);
+      const { provider: p, publicKeyStr } = await connectWallet(kind);
       setProvider(p);
-      setWallet(publicKey.toBase58());
+      setWallet(publicKeyStr);
       setChecking(true);
-      const bal = await getTokenBalance(publicKey);
+      const bal = await getTokenBalance(publicKeyStr);
       setBalance(bal);
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao conectar carteira");
@@ -58,8 +58,7 @@ function VerificationPage() {
     if (!provider || !wallet) return;
     setBurning(true);
     try {
-      const { PublicKey } = await import("@solana/web3.js");
-      const sig = await burnTokens(provider, new PublicKey(wallet));
+      const sig = await burnTokens(provider, wallet);
       toast.success("Queima confirmada. Validando…");
       await verifyBurnFn({ data: { signature: sig, wallet_address: wallet } });
       toast.success("Selo verificado concedido!");
