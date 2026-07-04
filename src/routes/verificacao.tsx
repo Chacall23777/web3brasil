@@ -41,11 +41,11 @@ function VerificationPage() {
 
   const doConnect = async (kind: WalletKind) => {
     try {
-      const { provider: p, publicKey } = await connectWallet(kind);
+      const { provider: p, publicKeyStr } = await connectWallet(kind);
       setProvider(p);
-      setWallet(publicKey.toBase58());
+      setWallet(publicKeyStr);
       setChecking(true);
-      const bal = await getTokenBalance(publicKey);
+      const bal = await getTokenBalance(publicKeyStr);
       setBalance(bal);
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao conectar carteira");

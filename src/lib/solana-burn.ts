@@ -52,7 +52,7 @@ export async function connectWallet(
   return { provider, publicKeyStr };
 }
 
-async function withRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
+async function withRetry(fn: () => Promise<any>, tries = 4): Promise<any> {
   let lastErr: unknown;
   for (let i = 0; i < tries; i++) {
     if (i) await new Promise((r) => setTimeout(r, 700 * i));
