@@ -75,10 +75,10 @@ export async function getTokenBalance(ownerBase58: string): Promise<number> {
   const ownerPk = new PublicKey(ownerBase58);
   const ata = getAssociatedTokenAddressSync(mintPk, ownerPk, true);
   try {
-    const [mintInfo, acct] = await Promise.all([
+    const [mintInfo, acct] = (await Promise.all([
       withRetry(() => getMint(conn, mintPk)),
       withRetry(() => getAccount(conn, ata)),
-    ]);
+    ])) as [any, any];
     return Number(acct.amount) / 10 ** mintInfo.decimals;
   } catch (e: any) {
     if (String(e?.message ?? "").includes("TokenAccountNotFound")) return 0;
