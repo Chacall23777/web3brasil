@@ -293,8 +293,8 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
 
 function Comments({ postId }: { postId: string }) {
   const { user, profile } = useAuth();
-function Comments({ postId }: { postId: string }) {
-  const { user, profile } = useAuth();
+  const { t: tc, lang } = useI18n();
+  const dateLocale = lang === "en" ? enUS : ptBR;
   const { t: tc, lang } = useI18n();
   const dateLocale = lang === "en" ? enUS : ptBR;
   const qc = useQueryClient();
