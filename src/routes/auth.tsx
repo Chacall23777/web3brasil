@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { requestInstallPrompt } from "@/components/InstallPWA";
 import { useEffect } from "react";
 
 export const Route = createFileRoute("/auth")({
@@ -50,6 +51,7 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Conta criada. Verifique seu e-mail se necessário.");
+        requestInstallPrompt();
       }
     } catch (err: any) {
       toast.error(err.message ?? "Falha na autenticação");
