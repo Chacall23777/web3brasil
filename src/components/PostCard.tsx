@@ -152,7 +152,7 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
               <UserSocialTags
                 verified={!!author.is_verified}
                 handles={{
-                  telegram_handle: author.telegram_handle ?? author.telegram ?? null,
+                  telegram_handle: author.telegram_handle ?? null,
                   x_handle: author.x_handle ?? null,
                   instagram_handle: author.instagram_handle ?? null,
                 }}
@@ -160,16 +160,6 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
             )}
           </div>
         </div>
-        {author?.telegram && (
-          <a
-            href={author.telegram.startsWith("http") ? author.telegram : `https://t.me/${author.telegram.replace(/^@/, "")}`}
-            target="_blank" rel="noopener noreferrer"
-            className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-primary"
-            aria-label="Telegram do autor"
-          >
-            <TelegramIcon width={16} height={16} />
-          </a>
-        )}
         {canEdit && !editing && (
           <button onClick={() => { setEditTitle(post.title ?? ""); setEditContent(post.content ?? ""); setEditing(true); }}
             className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-muted" aria-label={t("post.edit")}>
