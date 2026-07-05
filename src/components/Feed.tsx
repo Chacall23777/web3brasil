@@ -8,7 +8,7 @@ export function Feed({ type }: { type?: "text" | "token" }) {
     queryFn: async () => {
       let q = supabase
         .from("posts")
-        .select("*, profiles(display_name, avatar_url, telegram_handle, x_handle, instagram_handle, is_verified)")
+        .select("*, profiles(display_name, avatar_url, telegram_handle, x_handle, instagram_handle, is_verified, account_type)")
         .order("created_at", { ascending: false })
         .limit(50);
       if (type) q = q.eq("type", type);

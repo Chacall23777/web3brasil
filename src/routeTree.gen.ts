@@ -14,6 +14,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as EquipeRouteImport } from './routes/equipe'
+import { Route as DevelopersRouteImport } from './routes/developers'
 import { Route as ComunidadeRouteImport } from './routes/comunidade'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -21,7 +22,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostIdRouteImport } from './routes/post.$id'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as ApiV1PostsPost_idLikeRouteImport } from './routes/api/v1/posts.$post_id.like'
+import { Route as ApiV1PostsPost_idCommentsRouteImport } from './routes/api/v1/posts.$post_id.comments'
 
 const VerificacaoRoute = VerificacaoRouteImport.update({
   id: '/verificacao',
@@ -46,6 +50,11 @@ const McpRoute = McpRouteImport.update({
 const EquipeRoute = EquipeRouteImport.update({
   id: '/equipe',
   path: '/equipe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevelopersRoute = DevelopersRouteImport.update({
+  id: '/developers',
+  path: '/developers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComunidadeRoute = ComunidadeRouteImport.update({
@@ -85,11 +94,27 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1PostsRoute = ApiV1PostsRouteImport.update({
+  id: '/api/v1/posts',
+  path: '/api/v1/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1PostsPost_idLikeRoute = ApiV1PostsPost_idLikeRouteImport.update({
+  id: '/$post_id/like',
+  path: '/$post_id/like',
+  getParentRoute: () => ApiV1PostsRoute,
+} as any)
+const ApiV1PostsPost_idCommentsRoute =
+  ApiV1PostsPost_idCommentsRouteImport.update({
+    id: '/$post_id/comments',
+    path: '/$post_id/comments',
+    getParentRoute: () => ApiV1PostsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -97,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/comunidade': typeof ComunidadeRoute
+  '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
   '/perfil': typeof PerfilRoute
@@ -106,12 +132,16 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/post/$id': typeof PostIdRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
+  '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/comunidade': typeof ComunidadeRoute
+  '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
   '/perfil': typeof PerfilRoute
@@ -121,6 +151,9 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/post/$id': typeof PostIdRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
+  '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -128,6 +161,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/comunidade': typeof ComunidadeRoute
+  '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
   '/perfil': typeof PerfilRoute
@@ -137,6 +171,9 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/post/$id': typeof PostIdRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
+  '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -145,6 +182,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/comunidade'
+    | '/developers'
     | '/equipe'
     | '/mcp'
     | '/perfil'
@@ -154,12 +192,16 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/post/$id'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/v1/posts'
+    | '/api/v1/posts/$post_id/comments'
+    | '/api/v1/posts/$post_id/like'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/auth'
     | '/comunidade'
+    | '/developers'
     | '/equipe'
     | '/mcp'
     | '/perfil'
@@ -169,12 +211,16 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/post/$id'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/v1/posts'
+    | '/api/v1/posts/$post_id/comments'
+    | '/api/v1/posts/$post_id/like'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/auth'
     | '/comunidade'
+    | '/developers'
     | '/equipe'
     | '/mcp'
     | '/perfil'
@@ -184,6 +230,9 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/post/$id'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/v1/posts'
+    | '/api/v1/posts/$post_id/comments'
+    | '/api/v1/posts/$post_id/like'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -191,6 +240,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   ComunidadeRoute: typeof ComunidadeRoute
+  DevelopersRoute: typeof DevelopersRoute
   EquipeRoute: typeof EquipeRoute
   McpRoute: typeof McpRoute
   PerfilRoute: typeof PerfilRoute
@@ -200,6 +250,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   PostIdRoute: typeof PostIdRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiV1PostsRoute: typeof ApiV1PostsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -237,6 +288,13 @@ declare module '@tanstack/react-router' {
       path: '/equipe'
       fullPath: '/equipe'
       preLoaderRoute: typeof EquipeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/developers': {
+      id: '/developers'
+      path: '/developers'
+      fullPath: '/developers'
+      preLoaderRoute: typeof DevelopersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/comunidade': {
@@ -288,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/posts': {
+      id: '/api/v1/posts'
+      path: '/api/v1/posts'
+      fullPath: '/api/v1/posts'
+      preLoaderRoute: typeof ApiV1PostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -295,14 +360,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/posts/$post_id/like': {
+      id: '/api/v1/posts/$post_id/like'
+      path: '/$post_id/like'
+      fullPath: '/api/v1/posts/$post_id/like'
+      preLoaderRoute: typeof ApiV1PostsPost_idLikeRouteImport
+      parentRoute: typeof ApiV1PostsRoute
+    }
+    '/api/v1/posts/$post_id/comments': {
+      id: '/api/v1/posts/$post_id/comments'
+      path: '/$post_id/comments'
+      fullPath: '/api/v1/posts/$post_id/comments'
+      preLoaderRoute: typeof ApiV1PostsPost_idCommentsRouteImport
+      parentRoute: typeof ApiV1PostsRoute
+    }
   }
 }
+
+interface ApiV1PostsRouteChildren {
+  ApiV1PostsPost_idCommentsRoute: typeof ApiV1PostsPost_idCommentsRoute
+  ApiV1PostsPost_idLikeRoute: typeof ApiV1PostsPost_idLikeRoute
+}
+
+const ApiV1PostsRouteChildren: ApiV1PostsRouteChildren = {
+  ApiV1PostsPost_idCommentsRoute: ApiV1PostsPost_idCommentsRoute,
+  ApiV1PostsPost_idLikeRoute: ApiV1PostsPost_idLikeRoute,
+}
+
+const ApiV1PostsRouteWithChildren = ApiV1PostsRoute._addFileChildren(
+  ApiV1PostsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   ComunidadeRoute: ComunidadeRoute,
+  DevelopersRoute: DevelopersRoute,
   EquipeRoute: EquipeRoute,
   McpRoute: McpRoute,
   PerfilRoute: PerfilRoute,
@@ -313,6 +407,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   PostIdRoute: PostIdRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiV1PostsRoute: ApiV1PostsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

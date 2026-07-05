@@ -86,6 +86,95 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_agent_api_events: {
+        Row: {
+          agent_id: string
+          created_at: string
+          id: number
+          kind: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          id?: number
+          kind: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          id?: number
+          kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_agent_api_events_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "ai_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_agents: {
+        Row: {
+          api_key_hash: string
+          api_key_prefix: string
+          created_at: string
+          created_by_admin_id: string | null
+          description: string | null
+          id: string
+          is_suspended: boolean
+          name: string
+          operator_contact: string
+          rate_limit_per_hour: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key_hash: string
+          api_key_prefix: string
+          created_at?: string
+          created_by_admin_id?: string | null
+          description?: string | null
+          id?: string
+          is_suspended?: boolean
+          name: string
+          operator_contact: string
+          rate_limit_per_hour?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key_hash?: string
+          api_key_prefix?: string
+          created_at?: string
+          created_by_admin_id?: string | null
+          description?: string | null
+          id?: string
+          is_suspended?: boolean
+          name?: string
+          operator_contact?: string
+          rate_limit_per_hour?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_agents_created_by_admin_id_fkey"
+            columns: ["created_by_admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_agents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           content: string
@@ -243,6 +332,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: Database["public"]["Enums"]["account_type"]
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -262,6 +352,7 @@ export type Database = {
           x_handle: string | null
         }
         Insert: {
+          account_type?: Database["public"]["Enums"]["account_type"]
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -281,6 +372,7 @@ export type Database = {
           x_handle?: string | null
         }
         Update: {
+          account_type?: Database["public"]["Enums"]["account_type"]
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -441,6 +533,7 @@ export type Database = {
       get_own_profile: {
         Args: never
         Returns: {
+          account_type: Database["public"]["Enums"]["account_type"]
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -479,6 +572,7 @@ export type Database = {
       }
     }
     Enums: {
+      account_type: "human" | "ai_agent"
       app_role: "admin" | "user" | "super_admin"
     }
     CompositeTypes: {
@@ -607,6 +701,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: ["human", "ai_agent"],
       app_role: ["admin", "user", "super_admin"],
     },
   },

@@ -18,6 +18,7 @@ import { TelegramIcon } from "./SocialIcons";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { UserSocialTags } from "./UserSocialTags";
 import { safeHttpUrl } from "@/lib/safe-url";
+import { AiAgentBadge } from "./AiAgentBadge";
 
 export type FeedPost = {
   id: string;
@@ -47,6 +48,7 @@ export type FeedPost = {
     x_handle?: string | null;
     instagram_handle?: string | null;
     is_verified?: boolean | null;
+    account_type?: "human" | "ai_agent" | null;
   } | null;
 };
 
@@ -135,9 +137,10 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium truncate flex items-center gap-1">
+          <div className="text-sm font-medium truncate flex items-center gap-1 flex-wrap">
             <span className="truncate">{author?.display_name ?? "Usuário"}</span>
-            {author?.is_verified && <VerifiedBadge size={14} />}
+            {author?.account_type === "ai_agent" && <AiAgentBadge />}
+            {author?.is_verified && author?.account_type !== "ai_agent" && <VerifiedBadge size={14} />}
           </div>
           <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
             <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}</span>
@@ -297,7 +300,7 @@ function Comments({ postId }: { postId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comments")
-        .select("id, content, created_at, user_id, profiles(display_name, avatar_url, is_verified, telegram_handle, x_handle, instagram_handle)")
+        .select("id, content, created_at, user_id, profiles(display_name, avatar_url, is_verified, account_type, telegram_handle, x_handle, instagram_handle)")
         .eq("post_id", postId)
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -337,7 +340,8 @@ function Comments({ postId }: { postId: string }) {
               <div className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
                 <span className="font-medium text-foreground inline-flex items-center gap-1">
                   {c.profiles?.display_name ?? "Usuário"}
-                  {c.profiles?.is_verified && <VerifiedBadge size={12} />}
+                  {c.profiles?.account_type === "ai_agent" && <AiAgentBadge compact />}
+                  {c.profiles?.is_verified && c.profiles?.account_type !== "ai_agent" && <VerifiedBadge size={12} />}
                 </span>
                 <span>· {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: dateLocale })}</span>
                 {c.profiles && (

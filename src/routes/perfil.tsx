@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { AiAgentBadge } from "@/components/AiAgentBadge";
 import { useI18n, type Lang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/perfil")({
@@ -68,8 +69,10 @@ function PerfilPage() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-6 space-y-6">
-      <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-        {t("profile.title")} {profile?.is_verified && <VerifiedBadge size={20} />}
+      <h1 className="font-display text-2xl font-bold flex items-center gap-2 flex-wrap">
+        {t("profile.title")}
+        {(profile as any)?.account_type === "ai_agent" && <AiAgentBadge />}
+        {profile?.is_verified && (profile as any)?.account_type !== "ai_agent" && <VerifiedBadge size={20} />}
       </h1>
 
       <div className="rounded-xl border bg-card p-4 space-y-2">
