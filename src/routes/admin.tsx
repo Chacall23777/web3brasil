@@ -41,12 +41,14 @@ function AdminPage() {
           <TabsTrigger value="posts">Postagens</TabsTrigger>
           <TabsTrigger value="ticker">Cotação (Ticker)</TabsTrigger>
           <TabsTrigger value="verified">Verificados</TabsTrigger>
+          <TabsTrigger value="ads">Anúncios</TabsTrigger>
         </TabsList>
         <TabsContent value="social" className="mt-4"><SocialForm /></TabsContent>
         <TabsContent value="team" className="mt-4"><TeamAdmin /></TabsContent>
         <TabsContent value="posts" className="mt-4"><PostsAdmin /></TabsContent>
         <TabsContent value="ticker" className="mt-4"><TickerAdmin /></TabsContent>
         <TabsContent value="verified" className="mt-4"><VerifiedAdmin /></TabsContent>
+        <TabsContent value="ads" className="mt-4"><AdsAdmin /></TabsContent>
       </Tabs>
     </div>
   );
