@@ -17,6 +17,7 @@ import { ShareButtons } from "./ShareButtons";
 import { TelegramIcon } from "./SocialIcons";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { UserSocialTags } from "./UserSocialTags";
+import { safeHttpUrl } from "@/lib/safe-url";
 
 export type FeedPost = {
   id: string;
