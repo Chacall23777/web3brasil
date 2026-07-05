@@ -14,6 +14,7 @@ import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { Loader2, FileText, X } from "lucide-react";
 import { detectLanguage } from "@/lib/translate";
+import { safeHttpUrl } from "@/lib/safe-url";
 
 const MAX_PDF_MB = 25;
 
