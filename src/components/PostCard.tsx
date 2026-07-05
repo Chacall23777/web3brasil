@@ -191,21 +191,21 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
               <Input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Título"
+                placeholder={t("post.title")}
               />
             )}
             <Textarea
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
               rows={4}
-              placeholder="Conteúdo"
+              placeholder={t("post.content")}
             />
             <div className="flex gap-2">
               <Button size="sm" onClick={() => saveEdit.mutate()} disabled={saveEdit.isPending}>
-                <Check size={14} /> Salvar
+                <Check size={14} /> {t("post.save")}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
-                <X size={14} /> Cancelar
+                <X size={14} /> {t("post.cancel")}
               </Button>
             </div>
           </div>
