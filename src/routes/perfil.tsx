@@ -133,12 +133,27 @@ function PerfilPage() {
           <Input value={ig} onChange={(e) => setIg(e.target.value)} placeholder="@usuario ou https://instagram.com/usuario" maxLength={120} />
         </div>
 
+        <div className="space-y-2">
+          <Label>{t("profile.language")}</Label>
+          <div className="flex gap-2">
+            {(["pt","en"] as Lang[]).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLang(l)}
+                className={`px-3 py-1.5 rounded-md border text-sm ${lang === l ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}
+              >{l === "pt" ? t("lang.pt") : t("lang.en")}</button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">{t("profile.languageHint")}</p>
+        </div>
+
         <p className="text-xs text-muted-foreground">
           Suas redes aparecem como tags clicáveis ao lado do seu nome nas postagens.
         </p>
 
         <Button onClick={() => save.mutate()} disabled={save.isPending}>
-          {save.isPending ? "Salvando…" : "Salvar"}
+          {save.isPending ? t("profile.saving") : t("profile.save")}
         </Button>
       </div>
     </div>
