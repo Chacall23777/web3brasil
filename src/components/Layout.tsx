@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { XIcon, TelegramIcon, WhatsappIcon, InstagramIcon } from "./SocialIcons";
 import { Ticker } from "./Ticker";
+import { AdBanner } from "./AdBanner";
 
 export function Layout() {
   const { user, profile, isAdmin, signOut, loading } = useAuth();
@@ -26,6 +27,7 @@ export function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
+        <AdBanner />
         <Ticker />
         <div className="mx-auto max-w-6xl px-4 h-14 flex items-center gap-3">
           <Link to="/" className="font-display text-lg font-bold tracking-tight">

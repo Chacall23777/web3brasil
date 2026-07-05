@@ -41,6 +41,51 @@ export type Database = {
         }
         Relationships: []
       }
+      advertisements: {
+        Row: {
+          created_at: string
+          created_by_admin_id: string | null
+          duration_days: number
+          expires_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          tg_link: string | null
+          title: string | null
+          updated_at: string
+          website_link: string | null
+          x_link: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by_admin_id?: string | null
+          duration_days: number
+          expires_at: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          tg_link?: string | null
+          title?: string | null
+          updated_at?: string
+          website_link?: string | null
+          x_link?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by_admin_id?: string | null
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          tg_link?: string | null
+          title?: string | null
+          updated_at?: string
+          website_link?: string | null
+          x_link?: string | null
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
