@@ -326,7 +326,7 @@ function Comments({ postId }: { postId: string }) {
 
   return (
     <div className="border-t px-4 py-3 space-y-3 bg-muted/20">
-      <h4 className="text-sm font-semibold">Comentários</h4>
+      <h4 className="text-sm font-semibold">{tc("post.comments")}</h4>
       <div className="space-y-3">
         {(comments ?? []).map((c: any) => (
           <div key={c.id} className="flex gap-2">
