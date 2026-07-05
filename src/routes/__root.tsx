@@ -10,8 +10,10 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { registerPWA } from "../lib/pwa-register";
 import { AuthProvider } from "@/lib/auth-context";
 import { Layout } from "@/components/Layout";
+import { InstallPWA } from "@/components/InstallPWA";
 import { Toaster } from "@/components/ui/sonner";
 
 const siteTitle = "WEB3BRASIL — Comunidade cripto BR";
@@ -62,10 +64,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: siteTitle },
       { name: "twitter:description", content: siteDescription },
+      { name: "theme-color", content: "#0b1432" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "WEB3BRASIL" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" },
@@ -91,10 +100,12 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => { registerPWA(); }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Layout />
+        <InstallPWA />
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>
