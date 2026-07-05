@@ -19,6 +19,7 @@ export const Route = createFileRoute("/perfil")({
 
 function PerfilPage() {
   const { user, profile, refreshProfile, loading } = useAuth();
+  const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
@@ -49,10 +50,11 @@ function PerfilPage() {
         x_handle: x.trim() || null,
         instagram_handle: ig.trim() || null,
         avatar_url: avatar,
+        preferred_language: lang,
       }).eq("id", user.id);
       if (error) throw error;
     },
-    onSuccess: async () => { await refreshProfile(); toast.success("Perfil salvo"); },
+    onSuccess: async () => { await refreshProfile(); toast.success(t("profile.saved")); },
     onError: (e: Error) => toast.error(e.message),
   });
 
