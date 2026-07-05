@@ -14,6 +14,7 @@ import { lookupToken, getUsdBrlRate, formatBRL, type TokenInfo } from "@/lib/tok
 import { adminSearchUsers, adminSetVerified, adminPromoteToAdmin, adminDemoteFromAdmin } from "@/lib/verification.functions";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { AdsAdmin } from "@/components/AdsAdmin";
+import { AiAgentsAdmin } from "@/components/AiAgentsAdmin";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
