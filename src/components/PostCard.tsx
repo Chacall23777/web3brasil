@@ -234,13 +234,13 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
                 )}
               </div>
             </div>
-            {post.content && <p className="text-sm whitespace-pre-wrap">{post.content}</p>}
+            <TranslatedContent post={post} />
             <TokenChart chain={post.token_chain} contract={post.token_contract} />
           </>
         ) : (
           <>
             {post.title && <h3 className="font-display text-lg font-semibold">{post.title}</h3>}
-            {post.content && <p className="text-sm whitespace-pre-wrap">{post.content}</p>}
+            <TranslatedContent post={post} />
             {post.image_url && <img src={post.image_url} alt="" className="rounded-lg border max-h-96" />}
           </>
         )}
