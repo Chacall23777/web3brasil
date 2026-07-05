@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { requestInstallPrompt } from "@/components/InstallPWA";
 import { useEffect } from "react";
 
 export const Route = createFileRoute("/auth")({
