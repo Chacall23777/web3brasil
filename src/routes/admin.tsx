@@ -13,6 +13,7 @@ import { Trash2, Loader2, Search, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, Cr
 import { lookupToken, getUsdBrlRate, formatBRL, type TokenInfo } from "@/lib/token-lookup";
 import { adminSearchUsers, adminSetVerified, adminPromoteToAdmin, adminDemoteFromAdmin } from "@/lib/verification.functions";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { AdsAdmin } from "@/components/AdsAdmin";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
