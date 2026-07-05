@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { XIcon, TelegramIcon, WhatsappIcon, InstagramIcon } from "./SocialIcons";
 import { Ticker } from "./Ticker";
+import { AdBanner } from "./AdBanner";
 
 export function Layout() {
   const { user, profile, isAdmin, signOut, loading } = useAuth();
