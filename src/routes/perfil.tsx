@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { useI18n, type Lang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/perfil")({
   component: PerfilPage,
