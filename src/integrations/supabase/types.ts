@@ -438,6 +438,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_own_profile: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string
+          id: string
+          instagram_handle: string | null
+          is_verified: boolean
+          preferred_language: string
+          solana_wallet: string | null
+          telegram: string | null
+          telegram_handle: string | null
+          updated_at: string
+          verified_at: string | null
+          verified_by_admin_id: string | null
+          verified_method: string | null
+          verified_tx_signature: string | null
+          x_handle: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
