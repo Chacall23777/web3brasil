@@ -139,13 +139,14 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
             {author?.is_verified && <VerifiedBadge size={14} />}
           </div>
           <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-            <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}</span>
+            <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}</span>
             {post.edited_at && (
               <span
                 className="italic text-[10px] px-1.5 py-0.5 rounded bg-muted/50"
-                title={`Editado em ${new Date(post.edited_at).toLocaleString("pt-BR")}`}
+                title={new Date(post.edited_at).toLocaleString(lang === "en" ? "en-US" : "pt-BR")}
               >
-                editado · {formatDistanceToNow(new Date(post.edited_at), { addSuffix: true, locale: ptBR })}
+                {t("post.edited")} · {formatDistanceToNow(new Date(post.edited_at), { addSuffix: true, locale: dateLocale })}
+              </span>
               </span>
             )}
             {author && (
