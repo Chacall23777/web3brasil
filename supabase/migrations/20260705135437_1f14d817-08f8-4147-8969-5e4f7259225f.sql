@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS profiles_self_update ON public.profiles;
