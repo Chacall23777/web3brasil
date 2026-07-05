@@ -276,7 +276,7 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
           <Heart size={16} className={likeInfo?.liked ? "fill-current" : ""} /> {likeInfo?.count ?? 0}
         </Button>
         <Link to="/post/$id" params={{ id: post.id }}>
-          <Button variant="ghost" size="sm"><MessageCircle size={16} /> Comentar</Button>
+          <Button variant="ghost" size="sm"><MessageCircle size={16} /> {t("post.comment")}</Button>
         </Link>
         <div className="ml-auto flex items-center gap-1">
           <ShareButtons
