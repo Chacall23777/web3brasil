@@ -34,6 +34,10 @@ export type FeedPost = {
   file_name?: string | null;
   created_at: string;
   edited_at?: string | null;
+  content_original?: string | null;
+  content_pt?: string | null;
+  content_en?: string | null;
+  original_language?: "pt" | "en" | null;
   profiles: {
     display_name: string;
     avatar_url: string | null;
