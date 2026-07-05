@@ -147,7 +147,6 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
               >
                 {t("post.edited")} · {formatDistanceToNow(new Date(post.edited_at), { addSuffix: true, locale: dateLocale })}
               </span>
-              </span>
             )}
             {author && (
               <UserSocialTags
