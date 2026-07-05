@@ -2,13 +2,33 @@ import { Link, Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { XIcon, TelegramIcon, WhatsappIcon, InstagramIcon } from "./SocialIcons";
 import { Ticker } from "./Ticker";
 import { AdBanner } from "./AdBanner";
 
+function LangSwitcher() {
+  const { lang, setLang } = useI18n();
+  return (
+    <div className="inline-flex rounded-md border overflow-hidden text-xs">
+      <button
+        onClick={() => setLang("pt")}
+        className={`px-2 py-1 ${lang === "pt" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+        aria-label="Português"
+      >PT</button>
+      <button
+        onClick={() => setLang("en")}
+        className={`px-2 py-1 border-l ${lang === "en" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+        aria-label="English"
+      >EN</button>
+    </div>
+  );
+}
+
 export function Layout() {
   const { user, profile, isAdmin, signOut, loading } = useAuth();
+  const { t } = useI18n();
   const { data: social } = useQuery({
     queryKey: ["social_links"],
     queryFn: async () => {
