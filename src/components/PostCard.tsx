@@ -48,6 +48,7 @@ export type FeedPost = {
     x_handle?: string | null;
     instagram_handle?: string | null;
     is_verified?: boolean | null;
+    account_type?: "human" | "ai_agent" | null;
   } | null;
 };
 
