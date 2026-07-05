@@ -300,7 +300,7 @@ function Comments({ postId }: { postId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comments")
-        .select("id, content, created_at, user_id, profiles(display_name, avatar_url, is_verified, telegram_handle, x_handle, instagram_handle)")
+        .select("id, content, created_at, user_id, profiles(display_name, avatar_url, is_verified, account_type, telegram_handle, x_handle, instagram_handle)")
         .eq("post_id", postId)
         .order("created_at", { ascending: true });
       if (error) throw error;
