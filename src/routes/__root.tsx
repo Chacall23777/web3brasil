@@ -10,8 +10,10 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { registerPWA } from "../lib/pwa-register";
 import { AuthProvider } from "@/lib/auth-context";
 import { Layout } from "@/components/Layout";
+import { InstallPWA } from "@/components/InstallPWA";
 import { Toaster } from "@/components/ui/sonner";
 
 const siteTitle = "WEB3BRASIL — Comunidade cripto BR";
