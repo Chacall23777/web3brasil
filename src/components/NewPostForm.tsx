@@ -14,6 +14,7 @@ import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { Loader2, FileText, X } from "lucide-react";
 import { detectLanguage } from "@/lib/translate";
+import { safeHttpUrl } from "@/lib/safe-url";
 
 const MAX_PDF_MB = 25;
 
@@ -122,7 +123,13 @@ export function NewPostForm() {
           token_symbol: tSymbol.trim().toUpperCase(),
           token_contract: tContract.trim(),
           token_chain: tChain,
-          token_link: tLink.trim() || null,
+          token_link: (() => {
+            const raw = tLink.trim();
+            if (!raw) return null;
+            const safe = safeHttpUrl(raw);
+            if (!safe) throw new Error("Link do projeto inválido — use uma URL http(s) completa");
+            return safe;
+          })(),
           image_url: tImage,
           content: body,
           content_original: body,

@@ -17,6 +17,7 @@ import { ShareButtons } from "./ShareButtons";
 import { TelegramIcon } from "./SocialIcons";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { UserSocialTags } from "./UserSocialTags";
+import { safeHttpUrl } from "@/lib/safe-url";
 
 export type FeedPost = {
   id: string;
@@ -216,12 +217,15 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
                     <> · <span className="font-mono break-all">{post.token_contract.slice(0, 8)}…{post.token_contract.slice(-6)}</span></>
                   )}
                 </div>
-                {post.token_link && (
-                  <a href={post.token_link} target="_blank" rel="noopener noreferrer nofollow ugc"
-                    className="inline-block mt-1 text-xs text-primary hover:underline">
-                    Site do projeto ↗
-                  </a>
-                )}
+                {(() => {
+                  const safe = safeHttpUrl(post.token_link);
+                  return safe ? (
+                    <a href={safe} target="_blank" rel="noopener noreferrer nofollow ugc"
+                      className="inline-block mt-1 text-xs text-primary hover:underline">
+                      Site do projeto ↗
+                    </a>
+                  ) : null;
+                })()}
               </div>
             </div>
             <TranslatedContent post={post} />
