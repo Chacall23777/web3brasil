@@ -172,13 +172,13 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
         )}
         {canEdit && !editing && (
           <button onClick={() => { setEditTitle(post.title ?? ""); setEditContent(post.content ?? ""); setEditing(true); }}
-            className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-muted" aria-label="Editar">
+            className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-muted" aria-label={t("post.edit")}>
             <Pencil size={16} />
           </button>
         )}
         {canDelete && (
-          <button onClick={() => confirm("Apagar postagem?") && deletePost.mutate()}
-            className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted" aria-label="Apagar">
+          <button onClick={() => confirm(t("post.confirmDelete")) && deletePost.mutate()}
+            className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted" aria-label={t("post.delete")}>
             <Trash2 size={16} />
           </button>
         )}
