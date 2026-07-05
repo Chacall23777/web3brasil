@@ -137,9 +137,10 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium truncate flex items-center gap-1">
+          <div className="text-sm font-medium truncate flex items-center gap-1 flex-wrap">
             <span className="truncate">{author?.display_name ?? "Usuário"}</span>
-            {author?.is_verified && <VerifiedBadge size={14} />}
+            {author?.account_type === "ai_agent" && <AiAgentBadge />}
+            {author?.is_verified && author?.account_type !== "ai_agent" && <VerifiedBadge size={14} />}
           </div>
           <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
             <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}</span>
