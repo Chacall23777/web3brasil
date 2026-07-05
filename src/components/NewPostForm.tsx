@@ -123,7 +123,13 @@ export function NewPostForm() {
           token_symbol: tSymbol.trim().toUpperCase(),
           token_contract: tContract.trim(),
           token_chain: tChain,
-          token_link: tLink.trim() || null,
+          token_link: (() => {
+            const raw = tLink.trim();
+            if (!raw) return null;
+            const safe = safeHttpUrl(raw);
+            if (!safe) throw new Error("Link do projeto inválido — use uma URL http(s) completa");
+            return safe;
+          })(),
           image_url: tImage,
           content: body,
           content_original: body,
