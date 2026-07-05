@@ -14,6 +14,7 @@ export type Profile = {
   solana_wallet: string | null;
   is_verified: boolean;
   verified_method: string | null;
+  preferred_language: "pt" | "en" | null;
 };
 
 type AuthCtx = {
