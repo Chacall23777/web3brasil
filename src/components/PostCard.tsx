@@ -53,6 +53,8 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
   const { user, profile, isAdmin } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const { t, lang } = useI18n();
+  const dateLocale = lang === "en" ? enUS : ptBR;
   const author = post.profiles;
   const postUrl = typeof window !== "undefined"
     ? `${window.location.origin}/post/${post.id}`
