@@ -2,13 +2,33 @@ import { Link, Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { XIcon, TelegramIcon, WhatsappIcon, InstagramIcon } from "./SocialIcons";
 import { Ticker } from "./Ticker";
 import { AdBanner } from "./AdBanner";
 
+function LangSwitcher() {
+  const { lang, setLang } = useI18n();
+  return (
+    <div className="inline-flex rounded-md border overflow-hidden text-xs">
+      <button
+        onClick={() => setLang("pt")}
+        className={`px-2 py-1 ${lang === "pt" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+        aria-label="Português"
+      >PT</button>
+      <button
+        onClick={() => setLang("en")}
+        className={`px-2 py-1 border-l ${lang === "en" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+        aria-label="English"
+      >EN</button>
+    </div>
+  );
+}
+
 export function Layout() {
   const { user, profile, isAdmin, signOut, loading } = useAuth();
+  const { t } = useI18n();
   const { data: social } = useQuery({
     queryKey: ["social_links"],
     queryFn: async () => {
@@ -34,17 +54,18 @@ export function Layout() {
             <span className="text-primary">WEB3</span>BRASIL
           </Link>
           <nav className="hidden md:flex items-center gap-1 ml-4 text-sm">
-            <Link to="/" activeOptions={{ exact: true }} className="px-3 py-1.5 rounded-md hover:bg-muted [&.active]:bg-muted" activeProps={{ className: "active" }}>Início</Link>
-            <Link to="/comunidade" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Comunidade</Link>
-            <Link to="/equipe" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Equipe</Link>
+            <Link to="/" activeOptions={{ exact: true }} className="px-3 py-1.5 rounded-md hover:bg-muted [&.active]:bg-muted" activeProps={{ className: "active" }}>{t("nav.home")}</Link>
+            <Link to="/comunidade" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.community")}</Link>
+            <Link to="/equipe" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.team")}</Link>
             {user && (
-              <Link to="/verificacao" className="px-3 py-1.5 rounded-md hover:bg-muted text-yellow-500" activeProps={{ className: "bg-muted" }}>Verificar-se</Link>
+              <Link to="/verificacao" className="px-3 py-1.5 rounded-md hover:bg-muted text-yellow-500" activeProps={{ className: "bg-muted" }}>{t("nav.verify")}</Link>
             )}
             {isAdmin && (
-              <Link to="/admin" className="px-3 py-1.5 rounded-md hover:bg-muted text-primary" activeProps={{ className: "bg-muted" }}>Admin</Link>
+              <Link to="/admin" className="px-3 py-1.5 rounded-md hover:bg-muted text-primary" activeProps={{ className: "bg-muted" }}>{t("nav.admin")}</Link>
             )}
           </nav>
           <div className="ml-auto flex items-center gap-2">
+            <LangSwitcher />
             <div className="hidden sm:flex items-center gap-1.5">
               {socials.map(({ url, Icon, label, bg }) =>
                 url ? (
@@ -66,21 +87,21 @@ export function Layout() {
                       {(profile?.display_name ?? "U")[0]}
                     </div>
                   )}
-                  <span className="hidden md:inline text-sm">{profile?.display_name ?? "Perfil"}</span>
+                  <span className="hidden md:inline text-sm">{profile?.display_name ?? t("nav.profile")}</span>
                 </Link>
-                <Button variant="ghost" size="sm" onClick={signOut}>Sair</Button>
+                <Button variant="ghost" size="sm" onClick={signOut}>{t("nav.signout")}</Button>
               </>
             ) : (
-              <Link to="/auth"><Button size="sm">Entrar</Button></Link>
+              <Link to="/auth"><Button size="sm">{t("nav.signin")}</Button></Link>
             )}
           </div>
         </div>
         <nav className="md:hidden border-t px-2 py-1 flex items-center gap-1 overflow-x-auto text-sm">
-          <Link to="/" className="px-3 py-1.5 rounded-md hover:bg-muted" activeOptions={{ exact: true }} activeProps={{ className: "bg-muted" }}>Início</Link>
-          <Link to="/comunidade" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Comunidade</Link>
-          <Link to="/equipe" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Equipe</Link>
-          {user && <Link to="/verificacao" className="px-3 py-1.5 rounded-md hover:bg-muted text-yellow-500" activeProps={{ className: "bg-muted" }}>Verificar</Link>}
-          {isAdmin && <Link to="/admin" className="px-3 py-1.5 rounded-md hover:bg-muted text-primary" activeProps={{ className: "bg-muted" }}>Admin</Link>}
+          <Link to="/" className="px-3 py-1.5 rounded-md hover:bg-muted" activeOptions={{ exact: true }} activeProps={{ className: "bg-muted" }}>{t("nav.home")}</Link>
+          <Link to="/comunidade" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.community")}</Link>
+          <Link to="/equipe" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.team")}</Link>
+          {user && <Link to="/verificacao" className="px-3 py-1.5 rounded-md hover:bg-muted text-yellow-500" activeProps={{ className: "bg-muted" }}>{t("nav.verify")}</Link>}
+          {isAdmin && <Link to="/admin" className="px-3 py-1.5 rounded-md hover:bg-muted text-primary" activeProps={{ className: "bg-muted" }}>{t("nav.admin")}</Link>}
         </nav>
       </header>
 

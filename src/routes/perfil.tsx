@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { useI18n, type Lang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/perfil")({
   component: PerfilPage,
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/perfil")({
 
 function PerfilPage() {
   const { user, profile, refreshProfile, loading } = useAuth();
+  const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
@@ -48,10 +50,11 @@ function PerfilPage() {
         x_handle: x.trim() || null,
         instagram_handle: ig.trim() || null,
         avatar_url: avatar,
+        preferred_language: lang,
       }).eq("id", user.id);
       if (error) throw error;
     },
-    onSuccess: async () => { await refreshProfile(); toast.success("Perfil salvo"); },
+    onSuccess: async () => { await refreshProfile(); toast.success(t("profile.saved")); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -66,7 +69,7 @@ function PerfilPage() {
   return (
     <div className="mx-auto max-w-xl px-4 py-6 space-y-6">
       <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-        Meu perfil {profile?.is_verified && <VerifiedBadge size={20} />}
+        {t("profile.title")} {profile?.is_verified && <VerifiedBadge size={20} />}
       </h1>
 
       <div className="rounded-xl border bg-card p-4 space-y-2">
@@ -130,12 +133,27 @@ function PerfilPage() {
           <Input value={ig} onChange={(e) => setIg(e.target.value)} placeholder="@usuario ou https://instagram.com/usuario" maxLength={120} />
         </div>
 
+        <div className="space-y-2">
+          <Label>{t("profile.language")}</Label>
+          <div className="flex gap-2">
+            {(["pt","en"] as Lang[]).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLang(l)}
+                className={`px-3 py-1.5 rounded-md border text-sm ${lang === l ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}
+              >{l === "pt" ? t("lang.pt") : t("lang.en")}</button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">{t("profile.languageHint")}</p>
+        </div>
+
         <p className="text-xs text-muted-foreground">
           Suas redes aparecem como tags clicáveis ao lado do seu nome nas postagens.
         </p>
 
         <Button onClick={() => save.mutate()} disabled={save.isPending}>
-          {save.isPending ? "Salvando…" : "Salvar"}
+          {save.isPending ? t("profile.saving") : t("profile.save")}
         </Button>
       </div>
     </div>

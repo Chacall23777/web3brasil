@@ -167,12 +167,16 @@ export type Database = {
       posts: {
         Row: {
           content: string | null
+          content_en: string | null
+          content_original: string | null
+          content_pt: string | null
           created_at: string
           edited_at: string | null
           file_name: string | null
           file_url: string | null
           id: string
           image_url: string | null
+          original_language: string
           title: string | null
           token_chain: string | null
           token_contract: string | null
@@ -185,12 +189,16 @@ export type Database = {
         }
         Insert: {
           content?: string | null
+          content_en?: string | null
+          content_original?: string | null
+          content_pt?: string | null
           created_at?: string
           edited_at?: string | null
           file_name?: string | null
           file_url?: string | null
           id?: string
           image_url?: string | null
+          original_language?: string
           title?: string | null
           token_chain?: string | null
           token_contract?: string | null
@@ -203,12 +211,16 @@ export type Database = {
         }
         Update: {
           content?: string | null
+          content_en?: string | null
+          content_original?: string | null
+          content_pt?: string | null
           created_at?: string
           edited_at?: string | null
           file_name?: string | null
           file_url?: string | null
           id?: string
           image_url?: string | null
+          original_language?: string
           title?: string | null
           token_chain?: string | null
           token_contract?: string | null
@@ -238,6 +250,7 @@ export type Database = {
           id: string
           instagram_handle: string | null
           is_verified: boolean
+          preferred_language: string
           solana_wallet: string | null
           telegram: string | null
           telegram_handle: string | null
@@ -256,6 +269,7 @@ export type Database = {
           id: string
           instagram_handle?: string | null
           is_verified?: boolean
+          preferred_language?: string
           solana_wallet?: string | null
           telegram?: string | null
           telegram_handle?: string | null
@@ -274,6 +288,7 @@ export type Database = {
           id?: string
           instagram_handle?: string | null
           is_verified?: boolean
+          preferred_language?: string
           solana_wallet?: string | null
           telegram?: string | null
           telegram_handle?: string | null
@@ -429,6 +444,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      post_cache_translation: {
+        Args: { _lang: string; _post_id: string; _text: string }
+        Returns: undefined
       }
     }
     Enums: {

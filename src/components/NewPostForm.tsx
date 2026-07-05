@@ -11,7 +11,9 @@ import { toast } from "sonner";
 import { normalizeChain } from "./TokenChart";
 import { lookupToken } from "@/lib/token-lookup";
 import { Link } from "@tanstack/react-router";
+import { useI18n } from "@/lib/i18n";
 import { Loader2, FileText, X } from "lucide-react";
+import { detectLanguage } from "@/lib/translate";
 
 const MAX_PDF_MB = 25;
 
@@ -19,6 +21,7 @@ const MAX_PDF_MB = 25;
 
 export function NewPostForm() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"text" | "token">("text");
 
@@ -92,19 +95,27 @@ export function NewPostForm() {
       const uploaded = await uploadFile();
       if (tab === "text") {
         if (!content.trim() && !uploaded) throw new Error("Escreva algo ou envie um arquivo");
+        const body = content.trim();
+        const lang = detectLanguage(body, "pt");
         const { error } = await supabase.from("posts").insert({
           user_id: user.id, type: "text",
           title: title.trim() || null,
-          content: content.trim(),
+          content: body,
+          content_original: body,
+          content_pt: lang === "pt" ? body : null,
+          content_en: lang === "en" ? body : null,
+          original_language: lang,
           image_url: image,
           file_url: uploaded?.url ?? null,
           file_name: uploaded?.name ?? null,
-        });
+        } as any);
         if (error) throw error;
       } else {
         if (!fetched) throw new Error("Clique em Buscar para carregar as informações do token");
         if (!tName.trim() || !tSymbol.trim() || !tContract.trim()) throw new Error("Contrato inválido ou token não encontrado");
         if (!normalizeChain(tChain)) throw new Error("Rede não suportada pelo gráfico");
+        const body = tContent.trim() || null;
+        const lang = body ? detectLanguage(body, "pt") : "pt";
         const { error } = await supabase.from("posts").insert({
           user_id: user.id, type: "token",
           token_name: tName.trim(),
@@ -113,10 +124,14 @@ export function NewPostForm() {
           token_chain: tChain,
           token_link: tLink.trim() || null,
           image_url: tImage,
-          content: tContent.trim() || null,
+          content: body,
+          content_original: body,
+          content_pt: body && lang === "pt" ? body : null,
+          content_en: body && lang === "en" ? body : null,
+          original_language: lang,
           file_url: uploaded?.url ?? null,
           file_name: uploaded?.name ?? null,
-        });
+        } as any);
         if (error) throw error;
       }
     },
@@ -132,7 +147,7 @@ export function NewPostForm() {
   if (!user) {
     return (
       <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
-        <Link to="/auth" className="text-primary hover:underline">Entre com Google</Link> para postar na comunidade.
+        <Link to="/auth" className="text-primary hover:underline">{t("post.new.signInCta")}</Link> {t("post.new.signInSuffix")}
       </div>
     );
   }
@@ -151,13 +166,13 @@ export function NewPostForm() {
     <div className="rounded-xl border bg-card p-4">
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
         <TabsList>
-          <TabsTrigger value="text">Postagem</TabsTrigger>
-          <TabsTrigger value="token">Postar Token</TabsTrigger>
+          <TabsTrigger value="text">{t("post.new.tabText")}</TabsTrigger>
+          <TabsTrigger value="token">{t("post.new.tabToken")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="text" className="space-y-2 mt-4">
-          <Input placeholder="Título (opcional)" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} />
-          <Textarea placeholder="O que você quer compartilhar?" value={content} onChange={(e) => setContent(e.target.value)} rows={4} maxLength={2000} />
+          <Input placeholder={t("post.new.title")} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} />
+          <Textarea placeholder={t("post.new.content")} value={content} onChange={(e) => setContent(e.target.value)} rows={4} maxLength={2000} />
           <div className="flex items-center gap-2">
             <Input type="file" accept="image/*" onChange={(e) => handleImg(e.target.files?.[0], setImage)} className="flex-1" />
             {image && <img src={image} alt="" className="h-12 w-12 rounded object-cover border" />}
@@ -242,7 +257,7 @@ export function NewPostForm() {
 
       <div className="flex justify-end mt-4">
         <Button onClick={() => submit.mutate()} disabled={submit.isPending || uploading}>
-          {uploading ? "Enviando arquivo…" : submit.isPending ? "Publicando…" : "Publicar"}
+          {uploading ? "…" : submit.isPending ? t("post.publishing") : t("post.publish")}
         </Button>
       </div>
     </div>

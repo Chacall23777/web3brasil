@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Feed } from "@/components/Feed";
 import { NewPostForm } from "@/components/NewPostForm";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/comunidade")({
   component: Comunidade,
@@ -13,9 +14,10 @@ export const Route = createFileRoute("/comunidade")({
 });
 
 function Comunidade() {
+  const { t } = useI18n();
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 space-y-6">
-      <h1 className="font-display text-2xl font-bold">Comunidade</h1>
+      <h1 className="font-display text-2xl font-bold">{t("community.title")}</h1>
       <NewPostForm />
       <Feed />
     </div>

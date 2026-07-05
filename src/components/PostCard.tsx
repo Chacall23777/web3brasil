@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Heart, MessageCircle, Trash2, FileText, Download, Pencil, X, Check } from "lucide-react";
+import { ptBR, enUS } from "date-fns/locale";
+import { Heart, MessageCircle, Trash2, FileText, Download, Pencil, X, Check, Languages } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n";
+import { translateWithMyMemory, cachePostTranslation } from "@/lib/translate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +34,10 @@ export type FeedPost = {
   file_name?: string | null;
   created_at: string;
   edited_at?: string | null;
+  content_original?: string | null;
+  content_pt?: string | null;
+  content_en?: string | null;
+  original_language?: "pt" | "en" | null;
   profiles: {
     display_name: string;
     avatar_url: string | null;
@@ -47,6 +53,8 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
   const { user, profile, isAdmin } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const { t, lang } = useI18n();
+  const dateLocale = lang === "en" ? enUS : ptBR;
   const author = post.profiles;
   const postUrl = typeof window !== "undefined"
     ? `${window.location.origin}/post/${post.id}`
@@ -131,13 +139,13 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
             {author?.is_verified && <VerifiedBadge size={14} />}
           </div>
           <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-            <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}</span>
+            <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}</span>
             {post.edited_at && (
               <span
                 className="italic text-[10px] px-1.5 py-0.5 rounded bg-muted/50"
-                title={`Editado em ${new Date(post.edited_at).toLocaleString("pt-BR")}`}
+                title={new Date(post.edited_at).toLocaleString(lang === "en" ? "en-US" : "pt-BR")}
               >
-                editado · {formatDistanceToNow(new Date(post.edited_at), { addSuffix: true, locale: ptBR })}
+                {t("post.edited")} · {formatDistanceToNow(new Date(post.edited_at), { addSuffix: true, locale: dateLocale })}
               </span>
             )}
             {author && (
@@ -164,13 +172,13 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
         )}
         {canEdit && !editing && (
           <button onClick={() => { setEditTitle(post.title ?? ""); setEditContent(post.content ?? ""); setEditing(true); }}
-            className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-muted" aria-label="Editar">
+            className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-muted" aria-label={t("post.edit")}>
             <Pencil size={16} />
           </button>
         )}
         {canDelete && (
-          <button onClick={() => confirm("Apagar postagem?") && deletePost.mutate()}
-            className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted" aria-label="Apagar">
+          <button onClick={() => confirm(t("post.confirmDelete")) && deletePost.mutate()}
+            className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted" aria-label={t("post.delete")}>
             <Trash2 size={16} />
           </button>
         )}
@@ -183,21 +191,21 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
               <Input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Título"
+                placeholder={t("post.title")}
               />
             )}
             <Textarea
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
               rows={4}
-              placeholder="Conteúdo"
+              placeholder={t("post.content")}
             />
             <div className="flex gap-2">
               <Button size="sm" onClick={() => saveEdit.mutate()} disabled={saveEdit.isPending}>
-                <Check size={14} /> Salvar
+                <Check size={14} /> {t("post.save")}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
-                <X size={14} /> Cancelar
+                <X size={14} /> {t("post.cancel")}
               </Button>
             </div>
           </div>
@@ -226,13 +234,13 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
                 )}
               </div>
             </div>
-            {post.content && <p className="text-sm whitespace-pre-wrap">{post.content}</p>}
+            <TranslatedContent post={post} />
             <TokenChart chain={post.token_chain} contract={post.token_contract} />
           </>
         ) : (
           <>
             {post.title && <h3 className="font-display text-lg font-semibold">{post.title}</h3>}
-            {post.content && <p className="text-sm whitespace-pre-wrap">{post.content}</p>}
+            <TranslatedContent post={post} />
             {post.image_url && <img src={post.image_url} alt="" className="rounded-lg border max-h-96" />}
           </>
         )}
@@ -268,7 +276,7 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
           <Heart size={16} className={likeInfo?.liked ? "fill-current" : ""} /> {likeInfo?.count ?? 0}
         </Button>
         <Link to="/post/$id" params={{ id: post.id }}>
-          <Button variant="ghost" size="sm"><MessageCircle size={16} /> Comentar</Button>
+          <Button variant="ghost" size="sm"><MessageCircle size={16} /> {t("post.comment")}</Button>
         </Link>
         <div className="ml-auto flex items-center gap-1">
           <ShareButtons
@@ -285,6 +293,8 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
 
 function Comments({ postId }: { postId: string }) {
   const { user, profile } = useAuth();
+  const { t: tc, lang } = useI18n();
+  const dateLocale = lang === "en" ? enUS : ptBR;
   const qc = useQueryClient();
   const [text, setText] = useState("");
 
@@ -318,7 +328,7 @@ function Comments({ postId }: { postId: string }) {
 
   return (
     <div className="border-t px-4 py-3 space-y-3 bg-muted/20">
-      <h4 className="text-sm font-semibold">Comentários</h4>
+      <h4 className="text-sm font-semibold">{tc("post.comments")}</h4>
       <div className="space-y-3">
         {(comments ?? []).map((c: any) => (
           <div key={c.id} className="flex gap-2">
@@ -335,7 +345,7 @@ function Comments({ postId }: { postId: string }) {
                   {c.profiles?.display_name ?? "Usuário"}
                   {c.profiles?.is_verified && <VerifiedBadge size={12} />}
                 </span>
-                <span>· {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: ptBR })}</span>
+                <span>· {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: dateLocale })}</span>
                 {c.profiles && (
                   <UserSocialTags
                     verified={!!c.profiles.is_verified}
@@ -351,7 +361,7 @@ function Comments({ postId }: { postId: string }) {
             </div>
           </div>
         ))}
-        {comments?.length === 0 && <div className="text-sm text-muted-foreground">Nenhum comentário ainda.</div>}
+        {comments?.length === 0 && <div className="text-sm text-muted-foreground">{tc("post.new.noComments")}</div>}
       </div>
 
       {user ? (
@@ -366,12 +376,81 @@ function Comments({ postId }: { postId: string }) {
               {(profile?.display_name ?? "?")[0]}
             </div>
           )}
-          <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Escreva um comentário…" rows={2} maxLength={1000} className="flex-1" />
-          <Button type="submit" disabled={add.isPending || !text.trim()}>Enviar</Button>
+          <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={tc("post.new.commentPlaceholder")} rows={2} maxLength={1000} className="flex-1" />
+          <Button type="submit" disabled={add.isPending || !text.trim()}>{tc("post.new.commentSend")}</Button>
         </form>
       ) : (
         <div className="text-sm text-muted-foreground">
-          <Link to="/auth" className="text-primary hover:underline">Entre</Link> para comentar.
+          <Link to="/auth" className="text-primary hover:underline">{tc("nav.signin")}</Link> {tc("post.new.signInToComment")}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TranslatedContent({ post }: { post: FeedPost }) {
+  const { lang, t } = useI18n();
+  const { user } = useAuth();
+  const original = post.content_original ?? post.content ?? "";
+  const originalLang: "pt" | "en" = (post.original_language as "pt" | "en") ?? "pt";
+  const cached = lang === "pt" ? post.content_pt : post.content_en;
+  const initialTranslated = originalLang === lang ? original : cached ?? null;
+
+  const [translated, setTranslated] = useState<string | null>(initialTranslated);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const nextCached = lang === "pt" ? post.content_pt : post.content_en;
+    const next = originalLang === lang ? original : nextCached ?? null;
+    setTranslated(next);
+    setFailed(false);
+    setShowOriginal(false);
+  }, [lang, post.id, post.content_pt, post.content_en, originalLang, original]);
+
+  useEffect(() => {
+    if (!original.trim()) return;
+    if (originalLang === lang) return;
+    if (translated) return;
+    if (loading || failed) return;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const res = await translateWithMyMemory(original, originalLang, lang);
+      if (cancelled) return;
+      if (res.ok) {
+        setTranslated(res.text);
+        if (user) void cachePostTranslation(post.id, lang, res.text);
+      } else {
+        setFailed(true);
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [lang, originalLang, original, translated, loading, failed, post.id, user]);
+
+  if (!original.trim()) return null;
+
+  const isAutoTranslated = originalLang !== lang && !!translated;
+  const shown = showOriginal || !translated ? original : translated;
+
+  return (
+    <div className="space-y-1">
+      <p className="text-sm whitespace-pre-wrap">{shown}</p>
+      {failed && originalLang !== lang && (
+        <p className="text-[11px] text-muted-foreground italic">{t("post.translationUnavailable")}</p>
+      )}
+      {isAutoTranslated && (
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <Languages size={12} className="opacity-70" />
+          <span>{t("post.autoTranslated")}</span>
+          <button
+            className="underline hover:text-primary"
+            onClick={() => setShowOriginal((v) => !v)}
+          >
+            {showOriginal ? t("post.viewTranslation") : t("post.viewOriginal")}
+          </button>
         </div>
       )}
     </div>
