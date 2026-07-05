@@ -23,6 +23,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as ApiV1PostsPost_idCommentsRouteImport } from './routes/api/v1/posts.$post_id.comments'
 
 const VerificacaoRoute = VerificacaoRouteImport.update({
   id: '/verificacao',
@@ -97,6 +98,12 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1PostsPost_idCommentsRoute =
+  ApiV1PostsPost_idCommentsRouteImport.update({
+    id: '/$post_id/comments',
+    path: '/$post_id/comments',
+    getParentRoute: () => ApiV1PostsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -112,7 +119,8 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/post/$id': typeof PostIdRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
-  '/api/v1/posts': typeof ApiV1PostsRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -128,7 +136,8 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/post/$id': typeof PostIdRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
-  '/api/v1/posts': typeof ApiV1PostsRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -145,7 +154,8 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/post/$id': typeof PostIdRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
-  '/api/v1/posts': typeof ApiV1PostsRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/post/$id'
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
+    | '/api/v1/posts/$post_id/comments'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/post/$id'
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
+    | '/api/v1/posts/$post_id/comments'
   id:
     | '__root__'
     | '/'
@@ -196,6 +208,7 @@ export interface FileRouteTypes {
     | '/post/$id'
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
+    | '/api/v1/posts/$post_id/comments'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -212,7 +225,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   PostIdRoute: typeof PostIdRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
-  ApiV1PostsRoute: typeof ApiV1PostsRoute
+  ApiV1PostsRoute: typeof ApiV1PostsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -315,8 +328,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/posts/$post_id/comments': {
+      id: '/api/v1/posts/$post_id/comments'
+      path: '/$post_id/comments'
+      fullPath: '/api/v1/posts/$post_id/comments'
+      preLoaderRoute: typeof ApiV1PostsPost_idCommentsRouteImport
+      parentRoute: typeof ApiV1PostsRoute
+    }
   }
 }
+
+interface ApiV1PostsRouteChildren {
+  ApiV1PostsPost_idCommentsRoute: typeof ApiV1PostsPost_idCommentsRoute
+}
+
+const ApiV1PostsRouteChildren: ApiV1PostsRouteChildren = {
+  ApiV1PostsPost_idCommentsRoute: ApiV1PostsPost_idCommentsRoute,
+}
+
+const ApiV1PostsRouteWithChildren = ApiV1PostsRoute._addFileChildren(
+  ApiV1PostsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -333,7 +365,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   PostIdRoute: PostIdRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
-  ApiV1PostsRoute: ApiV1PostsRoute,
+  ApiV1PostsRoute: ApiV1PostsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
