@@ -21,6 +21,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostIdRouteImport } from './routes/post.$id'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 
 const VerificacaoRoute = VerificacaoRouteImport.update({
@@ -85,6 +86,11 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1PostsRoute = ApiV1PostsRouteImport.update({
+  id: '/api/v1/posts',
+  path: '/api/v1/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/post/$id': typeof PostIdRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/v1/posts': typeof ApiV1PostsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/post/$id': typeof PostIdRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/v1/posts': typeof ApiV1PostsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/post/$id': typeof PostIdRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/v1/posts': typeof ApiV1PostsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/post/$id'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/v1/posts'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/post/$id'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/v1/posts'
   id:
     | '__root__'
     | '/'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/post/$id'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/v1/posts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   PostIdRoute: typeof PostIdRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiV1PostsRoute: typeof ApiV1PostsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -288,6 +301,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/posts': {
+      id: '/api/v1/posts'
+      path: '/api/v1/posts'
+      fullPath: '/api/v1/posts'
+      preLoaderRoute: typeof ApiV1PostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -313,6 +333,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   PostIdRoute: PostIdRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiV1PostsRoute: ApiV1PostsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
