@@ -1,0 +1,17 @@
+{
+  "name": "WEB3BRASIL — Comunidade cripto BR",
+  "short_name": "WEB3BRASIL",
+  "description": "Comunidade brasileira de cripto: feed, projetos e postagens de tokens nacionais.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1432",
+  "theme_color": "#0b1432",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
