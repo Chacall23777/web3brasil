@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { normalizeChain } from "./TokenChart";
 import { lookupToken } from "@/lib/token-lookup";
 import { Link } from "@tanstack/react-router";
+import { useI18n } from "@/lib/i18n";
 import { Loader2, FileText, X } from "lucide-react";
 import { detectLanguage } from "@/lib/translate";
 
@@ -20,6 +21,7 @@ const MAX_PDF_MB = 25;
 
 export function NewPostForm() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"text" | "token">("text");
 
@@ -145,7 +147,7 @@ export function NewPostForm() {
   if (!user) {
     return (
       <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
-        <Link to="/auth" className="text-primary hover:underline">Entre com Google</Link> para postar na comunidade.
+        <Link to="/auth" className="text-primary hover:underline">{t("post.new.signInCta")}</Link> {t("post.new.signInSuffix")}
       </div>
     );
   }
@@ -164,13 +166,13 @@ export function NewPostForm() {
     <div className="rounded-xl border bg-card p-4">
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
         <TabsList>
-          <TabsTrigger value="text">Postagem</TabsTrigger>
-          <TabsTrigger value="token">Postar Token</TabsTrigger>
+          <TabsTrigger value="text">{t("post.new.tabText")}</TabsTrigger>
+          <TabsTrigger value="token">{t("post.new.tabToken")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="text" className="space-y-2 mt-4">
-          <Input placeholder="Título (opcional)" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} />
-          <Textarea placeholder="O que você quer compartilhar?" value={content} onChange={(e) => setContent(e.target.value)} rows={4} maxLength={2000} />
+          <Input placeholder={t("post.new.title")} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} />
+          <Textarea placeholder={t("post.new.content")} value={content} onChange={(e) => setContent(e.target.value)} rows={4} maxLength={2000} />
           <div className="flex items-center gap-2">
             <Input type="file" accept="image/*" onChange={(e) => handleImg(e.target.files?.[0], setImage)} className="flex-1" />
             {image && <img src={image} alt="" className="h-12 w-12 rounded object-cover border" />}
@@ -255,7 +257,7 @@ export function NewPostForm() {
 
       <div className="flex justify-end mt-4">
         <Button onClick={() => submit.mutate()} disabled={submit.isPending || uploading}>
-          {uploading ? "Enviando arquivo…" : submit.isPending ? "Publicando…" : "Publicar"}
+          {uploading ? "…" : submit.isPending ? t("post.publishing") : t("post.publish")}
         </Button>
       </div>
     </div>
