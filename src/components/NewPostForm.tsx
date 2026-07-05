@@ -92,19 +92,27 @@ export function NewPostForm() {
       const uploaded = await uploadFile();
       if (tab === "text") {
         if (!content.trim() && !uploaded) throw new Error("Escreva algo ou envie um arquivo");
+        const body = content.trim();
+        const lang = detectLanguage(body, "pt");
         const { error } = await supabase.from("posts").insert({
           user_id: user.id, type: "text",
           title: title.trim() || null,
-          content: content.trim(),
+          content: body,
+          content_original: body,
+          content_pt: lang === "pt" ? body : null,
+          content_en: lang === "en" ? body : null,
+          original_language: lang,
           image_url: image,
           file_url: uploaded?.url ?? null,
           file_name: uploaded?.name ?? null,
-        });
+        } as any);
         if (error) throw error;
       } else {
         if (!fetched) throw new Error("Clique em Buscar para carregar as informações do token");
         if (!tName.trim() || !tSymbol.trim() || !tContract.trim()) throw new Error("Contrato inválido ou token não encontrado");
         if (!normalizeChain(tChain)) throw new Error("Rede não suportada pelo gráfico");
+        const body = tContent.trim() || null;
+        const lang = body ? detectLanguage(body, "pt") : "pt";
         const { error } = await supabase.from("posts").insert({
           user_id: user.id, type: "token",
           token_name: tName.trim(),
@@ -113,10 +121,14 @@ export function NewPostForm() {
           token_chain: tChain,
           token_link: tLink.trim() || null,
           image_url: tImage,
-          content: tContent.trim() || null,
+          content: body,
+          content_original: body,
+          content_pt: body && lang === "pt" ? body : null,
+          content_en: body && lang === "en" ? body : null,
+          original_language: lang,
           file_url: uploaded?.url ?? null,
           file_name: uploaded?.name ?? null,
-        });
+        } as any);
         if (error) throw error;
       }
     },
