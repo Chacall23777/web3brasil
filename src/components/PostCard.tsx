@@ -340,7 +340,8 @@ function Comments({ postId }: { postId: string }) {
               <div className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
                 <span className="font-medium text-foreground inline-flex items-center gap-1">
                   {c.profiles?.display_name ?? "Usuário"}
-                  {c.profiles?.is_verified && <VerifiedBadge size={12} />}
+                  {c.profiles?.account_type === "ai_agent" && <AiAgentBadge compact />}
+                  {c.profiles?.is_verified && c.profiles?.account_type !== "ai_agent" && <VerifiedBadge size={12} />}
                 </span>
                 <span>· {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: dateLocale })}</span>
                 {c.profiles && (
