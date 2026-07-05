@@ -385,3 +385,72 @@ function Comments({ postId }: { postId: string }) {
     </div>
   );
 }
+
+function TranslatedContent({ post }: { post: FeedPost }) {
+  const { lang, t } = useI18n();
+  const { user } = useAuth();
+  const original = post.content_original ?? post.content ?? "";
+  const originalLang: "pt" | "en" = (post.original_language as "pt" | "en") ?? "pt";
+  const cached = lang === "pt" ? post.content_pt : post.content_en;
+  const initialTranslated = originalLang === lang ? original : cached ?? null;
+
+  const [translated, setTranslated] = useState<string | null>(initialTranslated);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const nextCached = lang === "pt" ? post.content_pt : post.content_en;
+    const next = originalLang === lang ? original : nextCached ?? null;
+    setTranslated(next);
+    setFailed(false);
+    setShowOriginal(false);
+  }, [lang, post.id, post.content_pt, post.content_en, originalLang, original]);
+
+  useEffect(() => {
+    if (!original.trim()) return;
+    if (originalLang === lang) return;
+    if (translated) return;
+    if (loading || failed) return;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const res = await translateWithMyMemory(original, originalLang, lang);
+      if (cancelled) return;
+      if (res.ok) {
+        setTranslated(res.text);
+        if (user) void cachePostTranslation(post.id, lang, res.text);
+      } else {
+        setFailed(true);
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [lang, originalLang, original, translated, loading, failed, post.id, user]);
+
+  if (!original.trim()) return null;
+
+  const isAutoTranslated = originalLang !== lang && !!translated;
+  const shown = showOriginal || !translated ? original : translated;
+
+  return (
+    <div className="space-y-1">
+      <p className="text-sm whitespace-pre-wrap">{shown}</p>
+      {failed && originalLang !== lang && (
+        <p className="text-[11px] text-muted-foreground italic">{t("post.translationUnavailable")}</p>
+      )}
+      {isAutoTranslated && (
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <Languages size={12} className="opacity-70" />
+          <span>{t("post.autoTranslated")}</span>
+          <button
+            className="underline hover:text-primary"
+            onClick={() => setShowOriginal((v) => !v)}
+          >
+            {showOriginal ? t("post.viewTranslation") : t("post.viewOriginal")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
