@@ -23,6 +23,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as ApiV1PostsPost_idLikeRouteImport } from './routes/api/v1/posts.$post_id.like'
 import { Route as ApiV1PostsPost_idCommentsRouteImport } from './routes/api/v1/posts.$post_id.comments'
 
 const VerificacaoRoute = VerificacaoRouteImport.update({
@@ -98,6 +99,11 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1PostsPost_idLikeRoute = ApiV1PostsPost_idLikeRouteImport.update({
+  id: '/$post_id/like',
+  path: '/$post_id/like',
+  getParentRoute: () => ApiV1PostsRoute,
+} as any)
 const ApiV1PostsPost_idCommentsRoute =
   ApiV1PostsPost_idCommentsRouteImport.update({
     id: '/$post_id/comments',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
+  '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
+  '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
+  '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
     | '/api/v1/posts/$post_id/comments'
+    | '/api/v1/posts/$post_id/like'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
     | '/api/v1/posts/$post_id/comments'
+    | '/api/v1/posts/$post_id/like'
   id:
     | '__root__'
     | '/'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
     | '/api/v1/posts/$post_id/comments'
+    | '/api/v1/posts/$post_id/like'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -328,6 +340,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/posts/$post_id/like': {
+      id: '/api/v1/posts/$post_id/like'
+      path: '/$post_id/like'
+      fullPath: '/api/v1/posts/$post_id/like'
+      preLoaderRoute: typeof ApiV1PostsPost_idLikeRouteImport
+      parentRoute: typeof ApiV1PostsRoute
+    }
     '/api/v1/posts/$post_id/comments': {
       id: '/api/v1/posts/$post_id/comments'
       path: '/$post_id/comments'
@@ -340,10 +359,12 @@ declare module '@tanstack/react-router' {
 
 interface ApiV1PostsRouteChildren {
   ApiV1PostsPost_idCommentsRoute: typeof ApiV1PostsPost_idCommentsRoute
+  ApiV1PostsPost_idLikeRoute: typeof ApiV1PostsPost_idLikeRoute
 }
 
 const ApiV1PostsRouteChildren: ApiV1PostsRouteChildren = {
   ApiV1PostsPost_idCommentsRoute: ApiV1PostsPost_idCommentsRoute,
+  ApiV1PostsPost_idLikeRoute: ApiV1PostsPost_idLikeRoute,
 }
 
 const ApiV1PostsRouteWithChildren = ApiV1PostsRoute._addFileChildren(
