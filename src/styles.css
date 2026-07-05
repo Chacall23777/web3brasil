@@ -79,3 +79,9 @@
 @utility animate-verified-pulse {
   animation: verified-pulse 1.6s ease-in-out infinite;
 }
+
+@keyframes adshine {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
