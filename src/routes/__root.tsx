@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { registerPWA } from "../lib/pwa-register";
 import { AuthProvider } from "@/lib/auth-context";
+import { I18nProvider } from "@/lib/i18n";
 import { Layout } from "@/components/Layout";
 import { InstallPWA } from "@/components/InstallPWA";
 import { Toaster } from "@/components/ui/sonner";
