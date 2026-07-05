@@ -54,6 +54,8 @@ export function InstallPWA() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [forced, setForced] = useState(false);
+  const [installed, setInstalled] = useState(false);
+  const [standalone, setStandalone] = useState(false);
 
   const iosDevice = typeof window !== "undefined" && isIos();
 
@@ -65,7 +67,10 @@ export function InstallPWA() {
   }, []);
 
   useEffect(() => {
-    if (isStandalone()) return;
+    if (isStandalone()) {
+      setStandalone(true);
+      return;
+    }
 
     // Check force flag from signup
     let force = false;
@@ -86,6 +91,7 @@ export function InstallPWA() {
     const onInstalled = () => {
       setVisible(false);
       setDeferred(null);
+      setInstalled(true);
     };
     const onRequest = () => showIfEligible(true);
 
@@ -123,9 +129,34 @@ export function InstallPWA() {
     setForced(false);
   };
 
-  if (!visible) return null;
+  const openModal = () => {
+    setForced(true);
+    setVisible(true);
+  };
+
+  // Already installed / running as app → render nothing
+  if (standalone || installed) return null;
 
   const canInstallDirect = !iosDevice && !!deferred;
+
+  // Persistent small floating badge (bottom-left) when modal is not open
+  if (!visible) {
+    return (
+      <button
+        onClick={openModal}
+        aria-label="Instalar aplicativo"
+        className="fixed bottom-4 left-4 z-40 group flex items-center gap-2 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 pl-2 pr-3 py-2 ring-2 ring-primary/40 hover:ring-primary/60 hover:scale-105 transition-all animate-in fade-in slide-in-from-bottom-2 duration-500"
+      >
+        <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-primary-foreground/15">
+          <Download className="h-3.5 w-3.5" />
+          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-primary animate-pulse" />
+        </span>
+        <span className="text-xs font-semibold whitespace-nowrap">Instalar app</span>
+      </button>
+    );
+  }
+
+
 
   return (
     <div
