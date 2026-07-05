@@ -345,7 +345,7 @@ function Comments({ postId }: { postId: string }) {
                   {c.profiles?.display_name ?? "Usuário"}
                   {c.profiles?.is_verified && <VerifiedBadge size={12} />}
                 </span>
-                <span>· {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: ptBR })}</span>
+                <span>· {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: dateLocale })}</span>
                 {c.profiles && (
                   <UserSocialTags
                     verified={!!c.profiles.is_verified}
@@ -361,7 +361,7 @@ function Comments({ postId }: { postId: string }) {
             </div>
           </div>
         ))}
-        {comments?.length === 0 && <div className="text-sm text-muted-foreground">Nenhum comentário ainda.</div>}
+        {comments?.length === 0 && <div className="text-sm text-muted-foreground">{tc("post.new.noComments")}</div>}
       </div>
 
       {user ? (
@@ -376,12 +376,12 @@ function Comments({ postId }: { postId: string }) {
               {(profile?.display_name ?? "?")[0]}
             </div>
           )}
-          <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Escreva um comentário…" rows={2} maxLength={1000} className="flex-1" />
-          <Button type="submit" disabled={add.isPending || !text.trim()}>Enviar</Button>
+          <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={tc("post.new.commentPlaceholder")} rows={2} maxLength={1000} className="flex-1" />
+          <Button type="submit" disabled={add.isPending || !text.trim()}>{tc("post.new.commentSend")}</Button>
         </form>
       ) : (
         <div className="text-sm text-muted-foreground">
-          <Link to="/auth" className="text-primary hover:underline">Entre</Link> para comentar.
+          <Link to="/auth" className="text-primary hover:underline">{tc("nav.signin")}</Link> {tc("post.new.signInToComment")}
         </div>
       )}
     </div>
