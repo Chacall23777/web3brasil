@@ -50,6 +50,7 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Conta criada. Verifique seu e-mail se necessário.");
+        requestInstallPrompt();
       }
     } catch (err: any) {
       toast.error(err.message ?? "Falha na autenticação");
