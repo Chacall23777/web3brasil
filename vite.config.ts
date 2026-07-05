@@ -34,7 +34,7 @@ export default defineConfig({
         workbox: {
           globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest,woff2}"],
           navigateFallback: "/offline.html",
-          navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
+          navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/mcp/, /^\/\.well-known\//, /^\/\.mcp/],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
