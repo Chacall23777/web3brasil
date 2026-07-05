@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Heart, MessageCircle, Trash2, FileText, Download, Pencil, X, Check } from "lucide-react";
+import { ptBR, enUS } from "date-fns/locale";
+import { Heart, MessageCircle, Trash2, FileText, Download, Pencil, X, Check, Languages } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n";
+import { translateWithMyMemory, cachePostTranslation } from "@/lib/translate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
