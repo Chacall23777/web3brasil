@@ -108,8 +108,10 @@ export const verifyBurn = createServerFn({ method: "POST" })
       throw new Error(`A queima precisa ser de exatamente ${BURN_AMOUNT} tokens.`);
     }
 
-    // Check the signature hasn't been used
-    const { data: dupe } = await (supabase as any)
+    // Check the signature hasn't been used (uses admin client — verified_tx_signature
+    // is not readable via the Data API by design).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: dupe } = await (supabaseAdmin as any)
       .from("profiles")
       .select("id")
       .eq("verified_tx_signature", signature)
@@ -119,7 +121,6 @@ export const verifyBurn = createServerFn({ method: "POST" })
     }
 
     // Use admin client to bypass the RLS lock on verification fields
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await (supabaseAdmin as any)
       .from("profiles")
       .update({
