@@ -15,7 +15,7 @@ function PostPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("*, profiles(display_name, avatar_url, telegram, telegram_handle, x_handle, instagram_handle, is_verified)")
+        .select("*, profiles(display_name, avatar_url, telegram_handle, x_handle, instagram_handle, is_verified)")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
