@@ -69,7 +69,7 @@ function PerfilPage() {
   return (
     <div className="mx-auto max-w-xl px-4 py-6 space-y-6">
       <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-        Meu perfil {profile?.is_verified && <VerifiedBadge size={20} />}
+        {t("profile.title")} {profile?.is_verified && <VerifiedBadge size={20} />}
       </h1>
 
       <div className="rounded-xl border bg-card p-4 space-y-2">
