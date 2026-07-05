@@ -14,6 +14,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as EquipeRouteImport } from './routes/equipe'
+import { Route as DevelopersRouteImport } from './routes/developers'
 import { Route as ComunidadeRouteImport } from './routes/comunidade'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -49,6 +50,11 @@ const McpRoute = McpRouteImport.update({
 const EquipeRoute = EquipeRouteImport.update({
   id: '/equipe',
   path: '/equipe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevelopersRoute = DevelopersRouteImport.update({
+  id: '/developers',
+  path: '/developers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComunidadeRoute = ComunidadeRouteImport.update({
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/comunidade': typeof ComunidadeRoute
+  '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
   '/perfil': typeof PerfilRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/comunidade': typeof ComunidadeRoute
+  '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
   '/perfil': typeof PerfilRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/comunidade': typeof ComunidadeRoute
+  '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
   '/perfil': typeof PerfilRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/comunidade'
+    | '/developers'
     | '/equipe'
     | '/mcp'
     | '/perfil'
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/comunidade'
+    | '/developers'
     | '/equipe'
     | '/mcp'
     | '/perfil'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/comunidade'
+    | '/developers'
     | '/equipe'
     | '/mcp'
     | '/perfil'
@@ -228,6 +240,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   ComunidadeRoute: typeof ComunidadeRoute
+  DevelopersRoute: typeof DevelopersRoute
   EquipeRoute: typeof EquipeRoute
   McpRoute: typeof McpRoute
   PerfilRoute: typeof PerfilRoute
@@ -275,6 +288,13 @@ declare module '@tanstack/react-router' {
       path: '/equipe'
       fullPath: '/equipe'
       preLoaderRoute: typeof EquipeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/developers': {
+      id: '/developers'
+      path: '/developers'
+      fullPath: '/developers'
+      preLoaderRoute: typeof DevelopersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/comunidade': {
@@ -376,6 +396,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   ComunidadeRoute: ComunidadeRoute,
+  DevelopersRoute: DevelopersRoute,
   EquipeRoute: EquipeRoute,
   McpRoute: McpRoute,
   PerfilRoute: PerfilRoute,
