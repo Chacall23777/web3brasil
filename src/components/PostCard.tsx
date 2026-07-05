@@ -18,6 +18,7 @@ import { TelegramIcon } from "./SocialIcons";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { UserSocialTags } from "./UserSocialTags";
 import { safeHttpUrl } from "@/lib/safe-url";
+import { AiAgentBadge } from "./AiAgentBadge";
 
 export type FeedPost = {
   id: string;
