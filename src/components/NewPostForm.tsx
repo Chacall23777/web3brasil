@@ -12,6 +12,7 @@ import { normalizeChain } from "./TokenChart";
 import { lookupToken } from "@/lib/token-lookup";
 import { Link } from "@tanstack/react-router";
 import { Loader2, FileText, X } from "lucide-react";
+import { detectLanguage } from "@/lib/translate";
 
 const MAX_PDF_MB = 25;
 
