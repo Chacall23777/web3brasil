@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { fileToResizedDataUrl } from "@/lib/image";
+import { fileToResizedBlob } from "@/lib/image";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { AiAgentBadge } from "@/components/AiAgentBadge";
