@@ -143,7 +143,19 @@ export function PostCard({
 
   return (
     <article className="rounded-xl border bg-card overflow-hidden">
-      <header className="p-4 flex items-center gap-3">
+      {repostedBy && (
+        <div className="px-4 pt-3 text-xs text-emerald-500 flex items-center gap-1.5">
+          <Repeat2 size={14} />
+          <Link to="/u/$id" params={{ id: repostedBy.user_id }} className="hover:underline font-medium">
+            {repostedBy.display_name ?? "Usuário"}
+          </Link>
+          <span className="text-muted-foreground">repostou</span>
+        </div>
+      )}
+      {quoteComment && (
+        <div className="px-4 pt-3 text-sm whitespace-pre-wrap break-words">{quoteComment}</div>
+      )}
+      <header className={`p-4 flex items-center gap-3 ${quoteComment ? "pt-3" : ""}`}>
         <Link to="/u/$id" params={{ id: post.user_id }} className="shrink-0">
           {author?.avatar_url ? (
             <img src={author.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
