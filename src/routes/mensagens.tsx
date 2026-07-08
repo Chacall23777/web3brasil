@@ -23,6 +23,7 @@ type ConversationRow = {
 function MessagesLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth" }); }, [user, loading, navigate]);
 
   const { data: convos } = useQuery({
@@ -71,19 +72,15 @@ function MessagesLayout() {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "direct_messages" },
-        () => { void refetchAll(); },
+        () => { qc.invalidateQueries({ queryKey: ["conversations", user.id] }); },
       )
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
-
-  const refetchAll = async () => {
-    const { refetch } = await import("@tanstack/react-query");
-    void refetch;
-  };
+  }, [user?.id, qc]);
 
   if (!user) return null;
+
+
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4">
