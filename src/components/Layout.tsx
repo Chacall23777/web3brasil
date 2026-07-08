@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { XIcon, TelegramIcon, WhatsappIcon, InstagramIcon } from "./SocialIcons";
 import { Ticker } from "./Ticker";
 import { AdBanner } from "./AdBanner";
+import { NotificationsBell } from "./NotificationsBell";
 
 function LangSwitcher() {
   const { lang, setLang } = useI18n();
@@ -83,6 +84,8 @@ export function Layout() {
               <div className="h-8 w-20 rounded-md bg-muted animate-pulse" />
             ) : user ? (
               <>
+                <NotificationsBell />
+
                 <Link to="/perfil" className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-muted">
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover" />
