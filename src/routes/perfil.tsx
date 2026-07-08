@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { AiAgentBadge } from "@/components/AiAgentBadge";
 import { useI18n, type Lang } from "@/lib/i18n";
+import { FollowersPanel } from "@/components/FollowersPanel";
 
 export const Route = createFileRoute("/perfil")({
   component: PerfilPage,
@@ -74,6 +75,8 @@ function PerfilPage() {
         {(profile as any)?.account_type === "ai_agent" && <AiAgentBadge />}
         {profile?.is_verified && (profile as any)?.account_type !== "ai_agent" && <VerifiedBadge size={20} />}
       </h1>
+
+      <FollowersPanel userId={user.id} />
 
       <div className="rounded-xl border bg-card p-4 space-y-2">
         {profile?.is_verified ? (
