@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerificacaoRouteImport } from './routes/verificacao'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as MensagensRouteImport } from './routes/mensagens'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as EquipeRouteImport } from './routes/equipe'
 import { Route as DevelopersRouteImport } from './routes/developers'
@@ -19,9 +20,13 @@ import { Route as ComunidadeRouteImport } from './routes/comunidade'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MensagensIndexRouteImport } from './routes/mensagens.index'
+import { Route as UIdRouteImport } from './routes/u.$id'
 import { Route as PostIdRouteImport } from './routes/post.$id'
+import { Route as MensagensUserIdRouteImport } from './routes/mensagens.$userId'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as UNNameRouteImport } from './routes/u.n.$name'
 import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiV1PostsPost_idLikeRouteImport } from './routes/api/v1/posts.$post_id.like'
@@ -40,6 +45,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MensagensRoute = MensagensRouteImport.update({
+  id: '/mensagens',
+  path: '/mensagens',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -77,10 +87,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MensagensIndexRoute = MensagensIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MensagensRoute,
+} as any)
+const UIdRoute = UIdRouteImport.update({
+  id: '/u/$id',
+  path: '/u/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PostIdRoute = PostIdRouteImport.update({
   id: '/post/$id',
   path: '/post/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MensagensUserIdRoute = MensagensUserIdRouteImport.update({
+  id: '/$userId',
+  path: '/$userId',
+  getParentRoute: () => MensagensRoute,
 } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
@@ -94,6 +119,11 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const UNNameRoute = UNNameRouteImport.update({
+  id: '/u/n/$name',
+  path: '/u/n/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1PostsRoute = ApiV1PostsRouteImport.update({
   id: '/api/v1/posts',
   path: '/api/v1/posts',
@@ -125,14 +155,19 @@ export interface FileRoutesByFullPath {
   '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
+  '/mensagens': typeof MensagensRouteWithChildren
   '/perfil': typeof PerfilRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/verificacao': typeof VerificacaoRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/mensagens/$userId': typeof MensagensUserIdRoute
   '/post/$id': typeof PostIdRoute
+  '/u/$id': typeof UIdRoute
+  '/mensagens/': typeof MensagensIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/u/n/$name': typeof UNNameRoute
   '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
   '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
@@ -149,9 +184,13 @@ export interface FileRoutesByTo {
   '/verificacao': typeof VerificacaoRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/mensagens/$userId': typeof MensagensUserIdRoute
   '/post/$id': typeof PostIdRoute
+  '/u/$id': typeof UIdRoute
+  '/mensagens': typeof MensagensIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/u/n/$name': typeof UNNameRoute
   '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
   '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
@@ -164,14 +203,19 @@ export interface FileRoutesById {
   '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
+  '/mensagens': typeof MensagensRouteWithChildren
   '/perfil': typeof PerfilRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/verificacao': typeof VerificacaoRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/mensagens/$userId': typeof MensagensUserIdRoute
   '/post/$id': typeof PostIdRoute
+  '/u/$id': typeof UIdRoute
+  '/mensagens/': typeof MensagensIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/u/n/$name': typeof UNNameRoute
   '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
   '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
@@ -185,14 +229,19 @@ export interface FileRouteTypes {
     | '/developers'
     | '/equipe'
     | '/mcp'
+    | '/mensagens'
     | '/perfil'
     | '/sitemap.xml'
     | '/verificacao'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/mensagens/$userId'
     | '/post/$id'
+    | '/u/$id'
+    | '/mensagens/'
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
+    | '/u/n/$name'
     | '/api/v1/posts/$post_id/comments'
     | '/api/v1/posts/$post_id/like'
   fileRoutesByTo: FileRoutesByTo
@@ -209,9 +258,13 @@ export interface FileRouteTypes {
     | '/verificacao'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/mensagens/$userId'
     | '/post/$id'
+    | '/u/$id'
+    | '/mensagens'
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
+    | '/u/n/$name'
     | '/api/v1/posts/$post_id/comments'
     | '/api/v1/posts/$post_id/like'
   id:
@@ -223,14 +276,19 @@ export interface FileRouteTypes {
     | '/developers'
     | '/equipe'
     | '/mcp'
+    | '/mensagens'
     | '/perfil'
     | '/sitemap.xml'
     | '/verificacao'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/mensagens/$userId'
     | '/post/$id'
+    | '/u/$id'
+    | '/mensagens/'
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
+    | '/u/n/$name'
     | '/api/v1/posts/$post_id/comments'
     | '/api/v1/posts/$post_id/like'
   fileRoutesById: FileRoutesById
@@ -243,14 +301,17 @@ export interface RootRouteChildren {
   DevelopersRoute: typeof DevelopersRoute
   EquipeRoute: typeof EquipeRoute
   McpRoute: typeof McpRoute
+  MensagensRoute: typeof MensagensRouteWithChildren
   PerfilRoute: typeof PerfilRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VerificacaoRoute: typeof VerificacaoRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   PostIdRoute: typeof PostIdRoute
+  UIdRoute: typeof UIdRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiV1PostsRoute: typeof ApiV1PostsRouteWithChildren
+  UNNameRoute: typeof UNNameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -274,6 +335,13 @@ declare module '@tanstack/react-router' {
       path: '/perfil'
       fullPath: '/perfil'
       preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mensagens': {
+      id: '/mensagens'
+      path: '/mensagens'
+      fullPath: '/mensagens'
+      preLoaderRoute: typeof MensagensRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -325,12 +393,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mensagens/': {
+      id: '/mensagens/'
+      path: '/'
+      fullPath: '/mensagens/'
+      preLoaderRoute: typeof MensagensIndexRouteImport
+      parentRoute: typeof MensagensRoute
+    }
+    '/u/$id': {
+      id: '/u/$id'
+      path: '/u/$id'
+      fullPath: '/u/$id'
+      preLoaderRoute: typeof UIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/post/$id': {
       id: '/post/$id'
       path: '/post/$id'
       fullPath: '/post/$id'
       preLoaderRoute: typeof PostIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/mensagens/$userId': {
+      id: '/mensagens/$userId'
+      path: '/$userId'
+      fullPath: '/mensagens/$userId'
+      preLoaderRoute: typeof MensagensUserIdRouteImport
+      parentRoute: typeof MensagensRoute
     }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
@@ -344,6 +433,13 @@ declare module '@tanstack/react-router' {
       path: '/.mcp/list-tools'
       fullPath: '/.mcp/list-tools'
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/u/n/$name': {
+      id: '/u/n/$name'
+      path: '/u/n/$name'
+      fullPath: '/u/n/$name'
+      preLoaderRoute: typeof UNNameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/posts': {
@@ -377,6 +473,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MensagensRouteChildren {
+  MensagensUserIdRoute: typeof MensagensUserIdRoute
+  MensagensIndexRoute: typeof MensagensIndexRoute
+}
+
+const MensagensRouteChildren: MensagensRouteChildren = {
+  MensagensUserIdRoute: MensagensUserIdRoute,
+  MensagensIndexRoute: MensagensIndexRoute,
+}
+
+const MensagensRouteWithChildren = MensagensRoute._addFileChildren(
+  MensagensRouteChildren,
+)
+
 interface ApiV1PostsRouteChildren {
   ApiV1PostsPost_idCommentsRoute: typeof ApiV1PostsPost_idCommentsRoute
   ApiV1PostsPost_idLikeRoute: typeof ApiV1PostsPost_idLikeRoute
@@ -399,6 +509,7 @@ const rootRouteChildren: RootRouteChildren = {
   DevelopersRoute: DevelopersRoute,
   EquipeRoute: EquipeRoute,
   McpRoute: McpRoute,
+  MensagensRoute: MensagensRouteWithChildren,
   PerfilRoute: PerfilRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VerificacaoRoute: VerificacaoRoute,
@@ -406,8 +517,10 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   PostIdRoute: PostIdRoute,
+  UIdRoute: UIdRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiV1PostsRoute: ApiV1PostsRouteWithChildren,
+  UNNameRoute: UNNameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
