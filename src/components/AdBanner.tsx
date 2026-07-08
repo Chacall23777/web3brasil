@@ -64,40 +64,41 @@ export function AdBanner() {
           )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {ad.tg_link && (
+          {(() => { const h = safeHttpUrl(ad.tg_link); return h && (
             <a
-              href={ad.tg_link}
+              href={h}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener noreferrer nofollow ugc"
               aria-label="Telegram"
               className="h-8 w-8 rounded-full bg-white/95 text-[#229ED9] flex items-center justify-center shadow hover:scale-110 transition"
             >
               <TelegramIcon width={16} height={16} />
             </a>
-          )}
-          {ad.x_link && (
+          ); })()}
+          {(() => { const h = safeHttpUrl(ad.x_link); return h && (
             <a
-              href={ad.x_link}
+              href={h}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener noreferrer nofollow ugc"
               aria-label="X"
               className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center shadow hover:scale-110 transition"
             >
               <XIcon width={14} height={14} />
             </a>
-          )}
-          {ad.website_link && (
+          ); })()}
+          {(() => { const h = safeHttpUrl(ad.website_link); return h && (
             <a
-              href={ad.website_link}
+              href={h}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener noreferrer nofollow ugc"
               aria-label="Site"
               className="h-8 w-8 rounded-full bg-white/95 text-fuchsia-700 flex items-center justify-center shadow hover:scale-110 transition"
             >
               <Globe size={16} />
             </a>
-          )}
+          ); })()}
         </div>
+
         {list.length > 1 && (
           <div className="hidden sm:flex items-center gap-1 shrink-0 ml-1">
             {list.map((_, i) => (
