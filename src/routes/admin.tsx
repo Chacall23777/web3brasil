@@ -35,8 +35,9 @@ function AdminPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 space-y-6">
       <h1 className="font-display text-2xl font-bold">Admin</h1>
-      <Tabs defaultValue="social">
+      <Tabs defaultValue="stats">
         <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="stats">Estatísticas</TabsTrigger>
           <TabsTrigger value="social">Redes sociais</TabsTrigger>
           <TabsTrigger value="team">Equipe</TabsTrigger>
           <TabsTrigger value="posts">Postagens</TabsTrigger>
@@ -45,6 +46,7 @@ function AdminPage() {
           <TabsTrigger value="ads">Anúncios</TabsTrigger>
           <TabsTrigger value="agents">Agentes de IA</TabsTrigger>
         </TabsList>
+        <TabsContent value="stats" className="mt-4"><StatsPanel /></TabsContent>
         <TabsContent value="social" className="mt-4"><SocialForm /></TabsContent>
         <TabsContent value="team" className="mt-4"><TeamAdmin /></TabsContent>
         <TabsContent value="posts" className="mt-4"><PostsAdmin /></TabsContent>
