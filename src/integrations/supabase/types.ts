@@ -356,6 +356,7 @@ export type Database = {
           image_url: string | null
           likes_count: number
           original_language: string
+          reposts_count: number
           title: string | null
           token_chain: string | null
           token_contract: string | null
@@ -380,6 +381,7 @@ export type Database = {
           image_url?: string | null
           likes_count?: number
           original_language?: string
+          reposts_count?: number
           title?: string | null
           token_chain?: string | null
           token_contract?: string | null
@@ -404,6 +406,7 @@ export type Database = {
           image_url?: string | null
           likes_count?: number
           original_language?: string
+          reposts_count?: number
           title?: string | null
           token_chain?: string | null
           token_contract?: string | null
@@ -486,6 +489,38 @@ export type Database = {
           x_handle?: string | null
         }
         Relationships: []
+      }
+      reposts: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          original_post_id: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          original_post_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          original_post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reposts_original_post_id_fkey"
+            columns: ["original_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       social_links: {
         Row: {

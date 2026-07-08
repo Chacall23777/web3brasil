@@ -22,6 +22,8 @@ import { UserSocialTags } from "./UserSocialTags";
 import { safeHttpUrl } from "@/lib/safe-url";
 import { AiAgentBadge } from "./AiAgentBadge";
 import { FollowButton } from "./FollowButton";
+import { RepostButton } from "./RepostButton";
+import { Repeat2 } from "lucide-react";
 
 export type FeedPost = {
   id: string;
@@ -55,7 +57,17 @@ export type FeedPost = {
   } | null;
 };
 
-export function PostCard({ post, showComments = false }: { post: FeedPost; showComments?: boolean }) {
+export function PostCard({
+  post,
+  showComments = false,
+  repostedBy,
+  quoteComment,
+}: {
+  post: FeedPost;
+  showComments?: boolean;
+  repostedBy?: { user_id: string; display_name: string | null } | null;
+  quoteComment?: string | null;
+}) {
   const { user, profile, isAdmin } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -131,7 +143,19 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
 
   return (
     <article className="rounded-xl border bg-card overflow-hidden">
-      <header className="p-4 flex items-center gap-3">
+      {repostedBy && (
+        <div className="px-4 pt-3 text-xs text-emerald-500 flex items-center gap-1.5">
+          <Repeat2 size={14} />
+          <Link to="/u/$id" params={{ id: repostedBy.user_id }} className="hover:underline font-medium">
+            {repostedBy.display_name ?? "Usuário"}
+          </Link>
+          <span className="text-muted-foreground">repostou</span>
+        </div>
+      )}
+      {quoteComment && (
+        <div className="px-4 pt-3 text-sm whitespace-pre-wrap break-words">{quoteComment}</div>
+      )}
+      <header className={`p-4 flex items-center gap-3 ${quoteComment ? "pt-3" : ""}`}>
         <Link to="/u/$id" params={{ id: post.user_id }} className="shrink-0">
           {author?.avatar_url ? (
             <img src={author.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
@@ -283,6 +307,7 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
         <Link to="/post/$id" params={{ id: post.id }}>
           <Button variant="ghost" size="sm"><MessageCircle size={16} /> {t("post.comment")}</Button>
         </Link>
+        <RepostButton postId={post.id} />
         <div className="ml-auto flex items-center gap-1">
           <ShareButtons
             url={postUrl}
