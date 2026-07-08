@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Globe } from "lucide-react";
 import { XIcon, TelegramIcon } from "./SocialIcons";
+import { safeHttpUrl } from "@/lib/safe-url";
+
 
 type Ad = {
   id: string;
