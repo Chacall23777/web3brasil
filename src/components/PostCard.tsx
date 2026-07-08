@@ -307,6 +307,7 @@ export function PostCard({
         <Link to="/post/$id" params={{ id: post.id }}>
           <Button variant="ghost" size="sm"><MessageCircle size={16} /> {t("post.comment")}</Button>
         </Link>
+        <RepostButton postId={post.id} />
         <div className="ml-auto flex items-center gap-1">
           <ShareButtons
             url={postUrl}
