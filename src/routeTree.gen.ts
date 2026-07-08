@@ -17,6 +17,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as EquipeRouteImport } from './routes/equipe'
 import { Route as DevelopersRouteImport } from './routes/developers'
 import { Route as ComunidadeRouteImport } from './routes/comunidade'
+import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -70,6 +71,11 @@ const DevelopersRoute = DevelopersRouteImport.update({
 const ComunidadeRoute = ComunidadeRouteImport.update({
   id: '/comunidade',
   path: '/comunidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuscarRoute = BuscarRouteImport.update({
+  id: '/buscar',
+  path: '/buscar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
   '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
   '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
   '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
@@ -225,6 +234,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/buscar'
     | '/comunidade'
     | '/developers'
     | '/equipe'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/buscar'
     | '/comunidade'
     | '/developers'
     | '/equipe'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/buscar'
     | '/comunidade'
     | '/developers'
     | '/equipe'
@@ -297,6 +309,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  BuscarRoute: typeof BuscarRoute
   ComunidadeRoute: typeof ComunidadeRoute
   DevelopersRoute: typeof DevelopersRoute
   EquipeRoute: typeof EquipeRoute
@@ -370,6 +383,13 @@ declare module '@tanstack/react-router' {
       path: '/comunidade'
       fullPath: '/comunidade'
       preLoaderRoute: typeof ComunidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buscar': {
+      id: '/buscar'
+      path: '/buscar'
+      fullPath: '/buscar'
+      preLoaderRoute: typeof BuscarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -505,6 +525,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  BuscarRoute: BuscarRoute,
   ComunidadeRoute: ComunidadeRoute,
   DevelopersRoute: DevelopersRoute,
   EquipeRoute: EquipeRoute,

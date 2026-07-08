@@ -35,8 +35,9 @@ function AdminPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 space-y-6">
       <h1 className="font-display text-2xl font-bold">Admin</h1>
-      <Tabs defaultValue="social">
+      <Tabs defaultValue="stats">
         <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="stats">Estatísticas</TabsTrigger>
           <TabsTrigger value="social">Redes sociais</TabsTrigger>
           <TabsTrigger value="team">Equipe</TabsTrigger>
           <TabsTrigger value="posts">Postagens</TabsTrigger>
@@ -45,6 +46,7 @@ function AdminPage() {
           <TabsTrigger value="ads">Anúncios</TabsTrigger>
           <TabsTrigger value="agents">Agentes de IA</TabsTrigger>
         </TabsList>
+        <TabsContent value="stats" className="mt-4"><StatsPanel /></TabsContent>
         <TabsContent value="social" className="mt-4"><SocialForm /></TabsContent>
         <TabsContent value="team" className="mt-4"><TeamAdmin /></TabsContent>
         <TabsContent value="posts" className="mt-4"><PostsAdmin /></TabsContent>
@@ -53,6 +55,100 @@ function AdminPage() {
         <TabsContent value="ads" className="mt-4"><AdsAdmin /></TabsContent>
         <TabsContent value="agents" className="mt-4"><AiAgentsAdmin /></TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function StatsPanel() {
+  const now = new Date();
+  const d7 = new Date(now.getTime() - 7 * 24 * 3600 * 1000).toISOString();
+  const d30 = new Date(now.getTime() - 30 * 24 * 3600 * 1000).toISOString();
+  const d1 = new Date(now.getTime() - 24 * 3600 * 1000).toISOString();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: async () => {
+      const [total, last24h, last7d, last30d, verified, agents, posts] = await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", d1),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", d7),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", d30),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_verified", true),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).eq("account_type", "ai_agent"),
+        supabase.from("posts").select("*", { count: "exact", head: true }),
+      ]);
+      return {
+        total: total.count ?? 0,
+        last24h: last24h.count ?? 0,
+        last7d: last7d.count ?? 0,
+        last30d: last30d.count ?? 0,
+        verified: verified.count ?? 0,
+        agents: agents.count ?? 0,
+        posts: posts.count ?? 0,
+      };
+    },
+  });
+
+  const { data: recent } = useQuery({
+    queryKey: ["admin-recent-users"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url, created_at, is_verified, account_type")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      return data ?? [];
+    },
+  });
+
+  const cards = [
+    { label: "Usuários cadastrados", value: data?.total },
+    { label: "Novos (24h)", value: data?.last24h },
+    { label: "Novos (7 dias)", value: data?.last7d },
+    { label: "Novos (30 dias)", value: data?.last30d },
+    { label: "Verificados", value: data?.verified },
+    { label: "Agentes de IA", value: data?.agents },
+    { label: "Postagens totais", value: data?.posts },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {cards.map((c) => (
+          <div key={c.label} className="rounded-xl border bg-card p-4">
+            <div className="text-xs text-muted-foreground">{c.label}</div>
+            <div className="text-2xl font-bold font-display mt-1">
+              {isLoading ? "…" : (c.value ?? 0).toLocaleString("pt-BR")}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-xl border bg-card">
+        <div className="p-3 border-b text-sm font-semibold">Cadastros mais recentes</div>
+        <div className="divide-y">
+          {(recent ?? []).map((u: any) => (
+            <div key={u.id} className="p-3 flex items-center gap-3">
+              {u.avatar_url ? (
+                <img src={u.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+              ) : (
+                <div className="h-9 w-9 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">
+                  {(u.display_name ?? "?")[0]}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">{u.display_name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {new Date(u.created_at).toLocaleString("pt-BR")}
+                </div>
+              </div>
+            </div>
+          ))}
+          {(!recent || recent.length === 0) && (
+            <div className="p-6 text-center text-sm text-muted-foreground">Nenhum cadastro ainda.</div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

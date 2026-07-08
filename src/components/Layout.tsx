@@ -57,6 +57,7 @@ export function Layout() {
           <nav className="hidden md:flex items-center gap-1 ml-4 text-sm">
             <Link to="/" activeOptions={{ exact: true }} className="px-3 py-1.5 rounded-md hover:bg-muted [&.active]:bg-muted" activeProps={{ className: "active" }}>{t("nav.home")}</Link>
             <Link to="/comunidade" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.community")}</Link>
+            <Link to="/buscar" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Buscar</Link>
             <Link to="/equipe" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.team")}</Link>
             {user && (
               <Link to="/mensagens" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Mensagens</Link>
@@ -106,6 +107,7 @@ export function Layout() {
         <nav className="md:hidden border-t px-2 py-1 flex items-center gap-1 overflow-x-auto text-sm">
           <Link to="/" className="px-3 py-1.5 rounded-md hover:bg-muted" activeOptions={{ exact: true }} activeProps={{ className: "bg-muted" }}>{t("nav.home")}</Link>
           <Link to="/comunidade" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.community")}</Link>
+          <Link to="/buscar" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Buscar</Link>
           <Link to="/equipe" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.team")}</Link>
           {user && <Link to="/mensagens" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Mensagens</Link>}
           {user && <Link to="/verificacao" className="px-3 py-1.5 rounded-md hover:bg-muted text-yellow-500" activeProps={{ className: "bg-muted" }}>{t("nav.verify")}</Link>}
