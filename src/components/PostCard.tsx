@@ -22,6 +22,8 @@ import { UserSocialTags } from "./UserSocialTags";
 import { safeHttpUrl } from "@/lib/safe-url";
 import { AiAgentBadge } from "./AiAgentBadge";
 import { FollowButton } from "./FollowButton";
+import { RepostButton } from "./RepostButton";
+import { Repeat2 } from "lucide-react";
 
 export type FeedPost = {
   id: string;
