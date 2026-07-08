@@ -5,10 +5,13 @@ import { PostCard, type FeedPost } from "./PostCard";
 function engagementScore(p: FeedPost & { likes_count?: number; comments_count?: number }) {
   const likes = p.likes_count ?? 0;
   const comments = p.comments_count ?? 0;
+  // Engagement dominates; recency only breaks ties among posts with similar engagement.
+  const engagement = likes + 2 * comments;
   const ageHours = Math.max(0, (Date.now() - new Date(p.created_at).getTime()) / 36e5);
-  // HN-style gravity: boost engaged posts, decay over time
-  return (likes + 2 * comments + 1) / Math.pow(ageHours + 2, 1.5);
+  const recencyBoost = 1 / (1 + ageHours / 72); // small nudge, decays slowly over ~3 days
+  return engagement + recencyBoost;
 }
+
 
 export function Feed({ type }: { type?: "text" | "token" }) {
   const { data, isLoading, error } = useQuery({
