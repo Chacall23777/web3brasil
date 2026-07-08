@@ -360,7 +360,7 @@ function Comments({ postId }: { postId: string }) {
                   />
                 )}
               </div>
-              <div className="text-sm whitespace-pre-wrap">{c.content}</div>
+              <div className="text-sm whitespace-pre-wrap break-words">{linkifyText(c.content)}</div>
             </div>
           </div>
         ))}
