@@ -44,8 +44,8 @@ function PerfilPage() {
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!user) return;
-      const { error } = await (supabase as any).from("profiles").update({
+      if (!user) throw new Error("Não autenticado");
+      const { data, error } = await (supabase as any).from("profiles").update({
         display_name: name.trim() || "Usuário",
         bio: bio.trim() || null,
         telegram_handle: tg.trim() || null,
@@ -53,17 +53,33 @@ function PerfilPage() {
         instagram_handle: ig.trim() || null,
         avatar_url: avatar,
         preferred_language: lang,
-      }).eq("id", user.id);
+      }).eq("id", user.id).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Nada foi salvo — verifique se você está logado com o dono deste perfil.");
+      }
     },
     onSuccess: async () => { await refreshProfile(); toast.success(t("profile.saved")); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(e.message || "Erro ao salvar perfil"),
   });
 
   const handleAvatar = async (f: File | undefined) => {
-    if (!f) return;
-    try { setAvatar(await fileToResizedDataUrl(f, 256, 0.85)); }
-    catch { toast.error("Não deu para processar a imagem"); }
+    if (!f || !user) return;
+    if (!f.type.startsWith("image/")) { toast.error("Arquivo precisa ser uma imagem"); return; }
+    if (f.size > 8 * 1024 * 1024) { toast.error("Imagem muito grande (máx 8 MB)"); return; }
+    try {
+      const blob = await fileToResizedBlob(f, 512, 0.85);
+      const path = `${user.id}/avatar-${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, blob, { contentType: "image/jpeg", upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      setAvatar(pub.publicUrl);
+      toast.success("Foto carregada — clique em salvar");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não deu para enviar a imagem");
+    }
   };
 
   if (!user) return null;
