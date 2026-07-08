@@ -296,83 +296,139 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
   );
 }
 
+type CommentRow = {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  parent_id: string | null;
+  profiles: any;
+};
+
 function Comments({ postId }: { postId: string }) {
   const { user, profile } = useAuth();
   const { t: tc, lang } = useI18n();
   const dateLocale = lang === "en" ? enUS : ptBR;
   const qc = useQueryClient();
   const [text, setText] = useState("");
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   const { data: comments } = useQuery({
     queryKey: ["comments", postId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comments")
-        .select("id, content, created_at, user_id, profiles(display_name, avatar_url, is_verified, account_type, telegram_handle, x_handle, instagram_handle)")
+        .select("id, content, created_at, user_id, parent_id, profiles(display_name, avatar_url, is_verified, account_type, telegram_handle, x_handle, instagram_handle)")
         .eq("post_id", postId)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as unknown as CommentRow[];
     },
   });
 
   const add = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (payload: { content: string; parent_id: string | null }) => {
       if (!user) throw new Error("Entre para comentar");
-      const content = text.trim();
+      const content = payload.content.trim();
       if (!content) return;
-      const { error } = await supabase.from("comments").insert({ post_id: postId, user_id: user.id, content });
+      const { error } = await supabase.from("comments").insert({
+        post_id: postId,
+        user_id: user.id,
+        content,
+        parent_id: payload.parent_id,
+      } as any);
       if (error) throw error;
     },
-    onSuccess: () => {
-      setText("");
+    onSuccess: (_d, vars) => {
+      if (vars.parent_id) { setReplyText(""); setReplyTo(null); } else { setText(""); }
       qc.invalidateQueries({ queryKey: ["comments", postId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const list = comments ?? [];
+  const roots = list.filter((c) => !c.parent_id);
+  const childrenOf = (id: string) => list.filter((c) => c.parent_id === id);
+
+  const renderComment = (c: CommentRow, depth = 0) => (
+    <div key={c.id} className={depth > 0 ? "ml-8 border-l pl-3" : ""}>
+      <div className="flex gap-2">
+        {c.profiles?.avatar_url ? (
+          <img src={c.profiles.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+        ) : (
+          <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
+            {(c.profiles?.display_name ?? "?")[0]}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
+            <span className="font-medium text-foreground inline-flex items-center gap-1">
+              {c.profiles?.display_name ?? "Usuário"}
+              {c.profiles?.account_type === "ai_agent" && <AiAgentBadge compact />}
+              {c.profiles?.is_verified && c.profiles?.account_type !== "ai_agent" && <VerifiedBadge size={12} />}
+            </span>
+            <span>· {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: dateLocale })}</span>
+            {c.profiles && (
+              <UserSocialTags
+                verified={!!c.profiles.is_verified}
+                handles={{
+                  telegram_handle: c.profiles.telegram_handle ?? null,
+                  x_handle: c.profiles.x_handle ?? null,
+                  instagram_handle: c.profiles.instagram_handle ?? null,
+                }}
+              />
+            )}
+          </div>
+          <div className="text-sm whitespace-pre-wrap break-words">{linkifyText(c.content)}</div>
+          {user && (
+            <button
+              onClick={() => { setReplyTo(replyTo === c.id ? null : c.id); setReplyText(""); }}
+              className="mt-1 text-xs text-muted-foreground hover:text-primary"
+            >
+              {replyTo === c.id ? tc("post.cancel") : "Responder"}
+            </button>
+          )}
+          {replyTo === c.id && user && (
+            <form
+              onSubmit={(e) => { e.preventDefault(); add.mutate({ content: replyText, parent_id: c.id }); }}
+              className="mt-2 flex gap-2 items-start"
+            >
+              <Textarea
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder="Escreva sua resposta…"
+                rows={2}
+                maxLength={1000}
+                className="flex-1"
+                autoFocus
+              />
+              <Button type="submit" size="sm" disabled={add.isPending || !replyText.trim()}>
+                {tc("post.new.commentSend")}
+              </Button>
+            </form>
+          )}
+        </div>
+      </div>
+      {childrenOf(c.id).length > 0 && (
+        <div className="mt-2 space-y-3">
+          {childrenOf(c.id).map((child) => renderComment(child, depth + 1))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="border-t px-4 py-3 space-y-3 bg-muted/20">
       <h4 className="text-sm font-semibold">{tc("post.comments")}</h4>
       <div className="space-y-3">
-        {(comments ?? []).map((c: any) => (
-          <div key={c.id} className="flex gap-2">
-            {c.profiles?.avatar_url ? (
-              <img src={c.profiles.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
-            ) : (
-              <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
-                {(c.profiles?.display_name ?? "?")[0]}
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
-                <span className="font-medium text-foreground inline-flex items-center gap-1">
-                  {c.profiles?.display_name ?? "Usuário"}
-                  {c.profiles?.account_type === "ai_agent" && <AiAgentBadge compact />}
-                  {c.profiles?.is_verified && c.profiles?.account_type !== "ai_agent" && <VerifiedBadge size={12} />}
-                </span>
-                <span>· {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: dateLocale })}</span>
-                {c.profiles && (
-                  <UserSocialTags
-                    verified={!!c.profiles.is_verified}
-                    handles={{
-                      telegram_handle: c.profiles.telegram_handle ?? null,
-                      x_handle: c.profiles.x_handle ?? null,
-                      instagram_handle: c.profiles.instagram_handle ?? null,
-                    }}
-                  />
-                )}
-              </div>
-              <div className="text-sm whitespace-pre-wrap break-words">{linkifyText(c.content)}</div>
-            </div>
-          </div>
-        ))}
-        {comments?.length === 0 && <div className="text-sm text-muted-foreground">{tc("post.new.noComments")}</div>}
+        {roots.map((c) => renderComment(c))}
+        {list.length === 0 && <div className="text-sm text-muted-foreground">{tc("post.new.noComments")}</div>}
       </div>
 
       {user ? (
         <form
-          onSubmit={(e) => { e.preventDefault(); add.mutate(); }}
+          onSubmit={(e) => { e.preventDefault(); add.mutate({ content: text, parent_id: null }); }}
           className="flex gap-2 items-start"
         >
           {profile?.avatar_url ? (
