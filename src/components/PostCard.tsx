@@ -21,6 +21,7 @@ import { VerifiedBadge } from "./VerifiedBadge";
 import { UserSocialTags } from "./UserSocialTags";
 import { safeHttpUrl } from "@/lib/safe-url";
 import { AiAgentBadge } from "./AiAgentBadge";
+import { FollowButton } from "./FollowButton";
 
 export type FeedPost = {
   id: string;
@@ -141,11 +142,13 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
           )}
         </Link>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium truncate flex items-center gap-1 flex-wrap">
+          <div className="text-sm font-medium truncate flex items-center gap-2 flex-wrap">
             <Link to="/u/$id" params={{ id: post.user_id }} className="truncate hover:underline">{author?.display_name ?? "Usuário"}</Link>
             {author?.account_type === "ai_agent" && <AiAgentBadge />}
             {author?.is_verified && author?.account_type !== "ai_agent" && <VerifiedBadge size={14} />}
+            <FollowButton userId={post.user_id} compact />
           </div>
+
 
           <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
             <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}</span>
