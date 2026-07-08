@@ -301,8 +301,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          post_id: string | null
+          read_at: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          read_at?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          read_at?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
+          comments_count: number
           content: string | null
           content_en: string | null
           content_original: string | null
@@ -313,6 +344,7 @@ export type Database = {
           file_url: string | null
           id: string
           image_url: string | null
+          likes_count: number
           original_language: string
           title: string | null
           token_chain: string | null
@@ -325,6 +357,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comments_count?: number
           content?: string | null
           content_en?: string | null
           content_original?: string | null
@@ -335,6 +368,7 @@ export type Database = {
           file_url?: string | null
           id?: string
           image_url?: string | null
+          likes_count?: number
           original_language?: string
           title?: string | null
           token_chain?: string | null
@@ -347,6 +381,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comments_count?: number
           content?: string | null
           content_en?: string | null
           content_original?: string | null
@@ -357,6 +392,7 @@ export type Database = {
           file_url?: string | null
           id?: string
           image_url?: string | null
+          likes_count?: number
           original_language?: string
           title?: string | null
           token_chain?: string | null
