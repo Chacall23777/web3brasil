@@ -34,14 +34,20 @@ export function FollowersPanel({ userId }: { userId: string }) {
     enabled: !!tab,
     queryFn: async () => {
       if (!tab) return [];
-      const col = tab === "followers" ? "follower_id" : "following_id";
+      const selectCol = tab === "followers" ? "follower_id" : "following_id";
       const filterCol = tab === "followers" ? "following_id" : "follower_id";
-      const { data } = await supabase
+      const { data: rows } = await supabase
         .from("follows")
-        .select(`user:profiles!follows_${col}_fkey(id, display_name, avatar_url, is_verified, account_type)`)
+        .select(`${selectCol}`)
         .eq(filterCol, userId)
         .limit(200);
-      return ((data ?? []) as any[]).map((r) => r.user).filter(Boolean) as UserRow[];
+      const ids = ((rows ?? []) as any[]).map((r) => r[selectCol]).filter(Boolean);
+      if (ids.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url, is_verified, account_type")
+        .in("id", ids);
+      return (profiles ?? []) as UserRow[];
     },
   });
 
