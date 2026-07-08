@@ -57,7 +57,17 @@ export type FeedPost = {
   } | null;
 };
 
-export function PostCard({ post, showComments = false }: { post: FeedPost; showComments?: boolean }) {
+export function PostCard({
+  post,
+  showComments = false,
+  repostedBy,
+  quoteComment,
+}: {
+  post: FeedPost;
+  showComments?: boolean;
+  repostedBy?: { user_id: string; display_name: string | null } | null;
+  quoteComment?: string | null;
+}) {
   const { user, profile, isAdmin } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
