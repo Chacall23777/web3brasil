@@ -129,19 +129,22 @@ export function PostCard({ post, showComments = false }: { post: FeedPost; showC
   return (
     <article className="rounded-xl border bg-card overflow-hidden">
       <header className="p-4 flex items-center gap-3">
-        {author?.avatar_url ? (
-          <img src={author.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
-        ) : (
-          <div className="h-10 w-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
-            {(author?.display_name ?? "?")[0]}
-          </div>
-        )}
+        <Link to="/u/$id" params={{ id: post.user_id }} className="shrink-0">
+          {author?.avatar_url ? (
+            <img src={author.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+          ) : (
+            <div className="h-10 w-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
+              {(author?.display_name ?? "?")[0]}
+            </div>
+          )}
+        </Link>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium truncate flex items-center gap-1 flex-wrap">
-            <span className="truncate">{author?.display_name ?? "Usuário"}</span>
+            <Link to="/u/$id" params={{ id: post.user_id }} className="truncate hover:underline">{author?.display_name ?? "Usuário"}</Link>
             {author?.account_type === "ai_agent" && <AiAgentBadge />}
             {author?.is_verified && author?.account_type !== "ai_agent" && <VerifiedBadge size={14} />}
           </div>
+
           <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
             <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}</span>
             {post.edited_at && (
