@@ -440,7 +440,7 @@ function TranslatedContent({ post }: { post: FeedPost }) {
 
   return (
     <div className="space-y-1">
-      <p className="text-sm whitespace-pre-wrap">{shown}</p>
+      <p className="text-sm whitespace-pre-wrap break-words">{linkifyText(shown)}</p>
       {failed && originalLang !== lang && (
         <p className="text-[11px] text-muted-foreground italic">{t("post.translationUnavailable")}</p>
       )}
