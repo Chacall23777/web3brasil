@@ -8,6 +8,7 @@ import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
 import { Trash2, Pencil, Power, PowerOff, Globe, X as XClose } from "lucide-react";
 import { XIcon, TelegramIcon } from "./SocialIcons";
+import { safeHttpUrl } from "@/lib/safe-url";
 
 type AdRow = {
   id: string;
@@ -67,12 +68,19 @@ export function AdsAdmin() {
       if (!user) throw new Error("Não autenticado");
       if (!image) throw new Error("Envie uma imagem para o anúncio");
       if (!DURATIONS.includes(duration)) throw new Error("Duração inválida");
+      const validateLink = (raw: string, label: string): string | null => {
+        const v = raw.trim();
+        if (!v) return null;
+        const safe = safeHttpUrl(v);
+        if (!safe) throw new Error(`${label} inválido — use uma URL http(s) completa`);
+        return safe;
+      };
       const payload = {
         image_url: image,
         title: title.trim() || null,
-        tg_link: tg.trim() || null,
-        x_link: x.trim() || null,
-        website_link: web.trim() || null,
+        tg_link: validateLink(tg, "Link do Telegram"),
+        x_link: validateLink(x, "Link do X"),
+        website_link: validateLink(web, "Link do site"),
         duration_days: duration,
       };
       if (editing) {
