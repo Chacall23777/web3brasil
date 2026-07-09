@@ -8,6 +8,7 @@ import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
 import { Trash2, Pencil, Power, PowerOff, Globe, X as XClose } from "lucide-react";
 import { XIcon, TelegramIcon } from "./SocialIcons";
+import { safeHttpUrl } from "@/lib/safe-url";
 
 type AdRow = {
   id: string;
