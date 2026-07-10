@@ -1,25 +1,31 @@
-import { XIcon, TelegramIcon, InstagramIcon } from "./SocialIcons";
+import { XIcon, TelegramIcon, InstagramIcon, GithubIcon } from "./SocialIcons";
 
 type Handles = {
   telegram_handle?: string | null;
   x_handle?: string | null;
   instagram_handle?: string | null;
+  github_handle?: string | null;
 };
 
-function normalize(kind: "telegram" | "x" | "instagram", raw: string): { href: string; label: string } {
+type Kind = "telegram" | "x" | "instagram" | "github";
+
+function normalize(kind: Kind, raw: string): { href: string; label: string } {
   const v = raw.trim().replace(/^@/, "");
   if (v.startsWith("http")) return { href: v, label: v.replace(/^https?:\/\//, "").slice(0, 40) };
   if (kind === "telegram") return { href: `https://t.me/${v}`, label: `@${v}` };
   if (kind === "x") return { href: `https://x.com/${v}`, label: `@${v}` };
+  if (kind === "github") return { href: `https://github.com/${v}`, label: `@${v}` };
   return { href: `https://instagram.com/${v}`, label: `@${v}` };
 }
 
-const VERIFIED_STYLES: Record<"telegram" | "x" | "instagram", string> = {
+const VERIFIED_STYLES: Record<Kind, string> = {
   telegram:
     "bg-gradient-to-r from-sky-400 to-blue-600 text-white border-sky-300 shadow-[0_0_10px_rgba(56,189,248,0.6)]",
   x: "bg-gradient-to-r from-neutral-800 to-black text-white border-neutral-500 shadow-[0_0_10px_rgba(255,255,255,0.35)]",
   instagram:
     "bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white border-pink-300 shadow-[0_0_10px_rgba(236,72,153,0.6)]",
+  github:
+    "bg-gradient-to-r from-neutral-700 to-neutral-900 text-white border-neutral-500 shadow-[0_0_10px_rgba(120,120,120,0.5)]",
 };
 
 export function UserSocialTags({
@@ -31,17 +37,29 @@ export function UserSocialTags({
   size?: number;
   verified?: boolean;
 }) {
-  const items: Array<{ kind: "telegram" | "x" | "instagram"; raw: string }> = [];
+  const items: Array<{ kind: Kind; raw: string }> = [];
   if (handles.telegram_handle) items.push({ kind: "telegram", raw: handles.telegram_handle });
   if (handles.x_handle) items.push({ kind: "x", raw: handles.x_handle });
   if (handles.instagram_handle) items.push({ kind: "instagram", raw: handles.instagram_handle });
+  if (handles.github_handle) items.push({ kind: "github", raw: handles.github_handle });
   if (!items.length) return null;
 
+  const ICONS: Record<Kind, typeof TelegramIcon> = {
+    telegram: TelegramIcon,
+    x: XIcon,
+    instagram: InstagramIcon,
+    github: GithubIcon,
+  };
+
   return (
-    <div className={verified ? "flex items-center gap-2 flex-wrap" : "flex items-center gap-1 flex-wrap"}>
+    <div
+      className={
+        verified ? "flex items-center gap-2 flex-wrap" : "flex items-center gap-1 flex-wrap"
+      }
+    >
       {items.map(({ kind, raw }) => {
         const { href, label } = normalize(kind, raw);
-        const Icon = kind === "telegram" ? TelegramIcon : kind === "x" ? XIcon : InstagramIcon;
+        const Icon = ICONS[kind];
         if (verified) {
           const iconSize = Math.max(size + 6, 18);
           return (
@@ -76,3 +94,4 @@ export function UserSocialTags({
     </div>
   );
 }
+
