@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Repeat2, Quote } from "lucide-react";
@@ -32,32 +32,28 @@ export function RepostButton({ postId }: { postId: string }) {
     queryKey: ["reposts", postId, user?.id ?? "anon"],
     queryFn: async () => {
       const [{ count }, mine] = await Promise.all([
-        supabase.from("reposts").select("*", { count: "exact", head: true }).eq("original_post_id", postId),
+        supabase
+          .from("reposts")
+          .select("*", { count: "exact", head: true })
+          .eq("original_post_id", postId),
         user
-          ? supabase.from("reposts").select("id").eq("original_post_id", postId).eq("user_id", user.id).maybeSingle()
+          ? supabase
+              .from("reposts")
+              .select("id")
+              .eq("original_post_id", postId)
+              .eq("user_id", user.id)
+              .maybeSingle()
           : Promise.resolve({ data: null }),
       ]);
       return { count: count ?? 0, reposted: !!mine.data };
     },
   });
 
-  // Realtime updates for repost count
-  useEffect(() => {
-    const channel = supabase
-      .channel(`reposts-${postId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "reposts", filter: `original_post_id=eq.${postId}` },
-        () => {
-          qc.invalidateQueries({ queryKey: ["reposts", postId] });
-          qc.invalidateQueries({ queryKey: ["repost-users", postId] });
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [postId, qc]);
+  // Nota: sem subscription de realtime por post aqui de propósito.
+  // Cada RepostButton renderizado (um por post no feed) abriria seu próprio
+  // canal WebSocket — com 60 posts na tela isso vira 60 conexões simultâneas,
+  // pesando bastante a página. A contagem já se atualiza para quem faz a ação
+  // (via invalidateQueries no onSuccess da mutação abaixo).
 
   const doRepost = useMutation({
     mutationFn: async (payload: { comment: string | null }) => {
@@ -116,10 +112,7 @@ export function RepostButton({ postId }: { postId: string }) {
               {active ? "Desfazer repost" : "Repostar"}
             </DropdownMenuItem>
             {!active && (
-              <DropdownMenuItem
-                onClick={() => setQuoteOpen(true)}
-                disabled={!user}
-              >
+              <DropdownMenuItem onClick={() => setQuoteOpen(true)} disabled={!user}>
                 <Quote size={14} className="mr-2" />
                 Repostar com comentário
               </DropdownMenuItem>
@@ -147,7 +140,9 @@ export function RepostButton({ postId }: { postId: string }) {
             autoFocus
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setQuoteOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setQuoteOpen(false)}>
+              Cancelar
+            </Button>
             <Button
               onClick={() => doRepost.mutate({ comment: comment.trim() || null })}
               disabled={doRepost.isPending}
@@ -204,7 +199,11 @@ function RepostersDialog({
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted"
             >
               {r.profiles?.avatar_url ? (
-                <img src={r.profiles.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                <img
+                  src={r.profiles.avatar_url}
+                  alt=""
+                  className="h-9 w-9 rounded-full object-cover"
+                />
               ) : (
                 <div className="h-9 w-9 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
                   {(r.profiles?.display_name ?? "?")[0]}
@@ -221,3 +220,4 @@ function RepostersDialog({
     </Dialog>
   );
 }
+
