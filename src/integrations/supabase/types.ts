@@ -434,7 +434,6 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string
-          github_handle: string | null
           id: string
           instagram_handle: string | null
           is_verified: boolean
@@ -455,7 +454,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string
-          github_handle?: string | null
           id: string
           instagram_handle?: string | null
           is_verified?: boolean
@@ -476,7 +474,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string
-          github_handle?: string | null
           id?: string
           instagram_handle?: string | null
           is_verified?: boolean
@@ -670,7 +667,6 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string
-          github_handle: string | null
           id: string
           instagram_handle: string | null
           is_verified: boolean
@@ -839,4 +835,3 @@ export const Constants = {
     },
   },
 } as const
-
