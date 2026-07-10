@@ -15,7 +15,9 @@ function PostPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("*, profiles(display_name, avatar_url, telegram_handle, x_handle, instagram_handle, is_verified)")
+        .select(
+          "*, profiles(display_name, avatar_url, telegram_handle, x_handle, instagram_handle, github_handle, is_verified)",
+        )
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -26,7 +28,9 @@ function PostPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 space-y-4">
-      <Link to="/comunidade" className="text-sm text-muted-foreground hover:text-foreground">← Voltar</Link>
+      <Link to="/comunidade" className="text-sm text-muted-foreground hover:text-foreground">
+        ← Voltar
+      </Link>
       {isLoading && <div className="text-sm text-muted-foreground">Carregando…</div>}
       {error && <div className="text-sm text-destructive">Postagem não encontrada.</div>}
       {data && <PostCard post={data} showComments />}
