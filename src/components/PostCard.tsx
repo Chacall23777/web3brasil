@@ -3,7 +3,17 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { Heart, MessageCircle, Trash2, FileText, Download, Pencil, X, Check, Languages } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Trash2,
+  FileText,
+  Download,
+  Pencil,
+  X,
+  Check,
+  Languages,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/lib/i18n";
@@ -52,6 +62,7 @@ export type FeedPost = {
     telegram_handle?: string | null;
     x_handle?: string | null;
     instagram_handle?: string | null;
+    github_handle?: string | null;
     is_verified?: boolean | null;
     account_type?: "human" | "ai_agent" | null;
   } | null;
@@ -74,9 +85,10 @@ export function PostCard({
   const { t, lang } = useI18n();
   const dateLocale = lang === "en" ? enUS : ptBR;
   const author = post.profiles;
-  const postUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/post/${post.id}`
-    : `/post/${post.id}`;
+  const postUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/post/${post.id}`
+      : `/post/${post.id}`;
 
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(post.title ?? "");
@@ -88,7 +100,12 @@ export function PostCard({
       const [{ count }, mine] = await Promise.all([
         supabase.from("likes").select("*", { count: "exact", head: true }).eq("post_id", post.id),
         user
-          ? supabase.from("likes").select("id").eq("post_id", post.id).eq("user_id", user.id).maybeSingle()
+          ? supabase
+              .from("likes")
+              .select("id")
+              .eq("post_id", post.id)
+              .eq("user_id", user.id)
+              .maybeSingle()
           : Promise.resolve({ data: null }),
       ]);
       return { count: count ?? 0, liked: !!mine.data };
@@ -146,7 +163,11 @@ export function PostCard({
       {repostedBy && (
         <div className="px-4 pt-3 text-xs text-emerald-500 flex items-center gap-1.5">
           <Repeat2 size={14} />
-          <Link to="/u/$id" params={{ id: repostedBy.user_id }} className="hover:underline font-medium">
+          <Link
+            to="/u/$id"
+            params={{ id: repostedBy.user_id }}
+            className="hover:underline font-medium"
+          >
             {repostedBy.display_name ?? "Usuário"}
           </Link>
           <span className="text-muted-foreground">repostou</span>
@@ -167,21 +188,33 @@ export function PostCard({
         </Link>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium truncate flex items-center gap-2 flex-wrap">
-            <Link to="/u/$id" params={{ id: post.user_id }} className="truncate hover:underline">{author?.display_name ?? "Usuário"}</Link>
+            <Link to="/u/$id" params={{ id: post.user_id }} className="truncate hover:underline">
+              {author?.display_name ?? "Usuário"}
+            </Link>
             {author?.account_type === "ai_agent" && <AiAgentBadge />}
-            {author?.is_verified && author?.account_type !== "ai_agent" && <VerifiedBadge size={14} />}
+            {author?.is_verified && author?.account_type !== "ai_agent" && (
+              <VerifiedBadge size={14} />
+            )}
             <FollowButton userId={post.user_id} compact />
           </div>
 
-
           <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-            <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}</span>
+            <span>
+              {formatDistanceToNow(new Date(post.created_at), {
+                addSuffix: true,
+                locale: dateLocale,
+              })}
+            </span>
             {post.edited_at && (
               <span
                 className="italic text-[10px] px-1.5 py-0.5 rounded bg-muted/50"
                 title={new Date(post.edited_at).toLocaleString(lang === "en" ? "en-US" : "pt-BR")}
               >
-                {t("post.edited")} · {formatDistanceToNow(new Date(post.edited_at), { addSuffix: true, locale: dateLocale })}
+                {t("post.edited")} ·{" "}
+                {formatDistanceToNow(new Date(post.edited_at), {
+                  addSuffix: true,
+                  locale: dateLocale,
+                })}
               </span>
             )}
             {author && (
@@ -191,20 +224,31 @@ export function PostCard({
                   telegram_handle: author.telegram_handle ?? null,
                   x_handle: author.x_handle ?? null,
                   instagram_handle: author.instagram_handle ?? null,
+                  github_handle: author.github_handle ?? null,
                 }}
               />
             )}
           </div>
         </div>
         {canEdit && !editing && (
-          <button onClick={() => { setEditTitle(post.title ?? ""); setEditContent(post.content ?? ""); setEditing(true); }}
-            className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-muted" aria-label={t("post.edit")}>
+          <button
+            onClick={() => {
+              setEditTitle(post.title ?? "");
+              setEditContent(post.content ?? "");
+              setEditing(true);
+            }}
+            className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-muted"
+            aria-label={t("post.edit")}
+          >
             <Pencil size={16} />
           </button>
         )}
         {canDelete && (
-          <button onClick={() => confirm(t("post.confirmDelete")) && deletePost.mutate()}
-            className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted" aria-label={t("post.delete")}>
+          <button
+            onClick={() => confirm(t("post.confirmDelete")) && deletePost.mutate()}
+            className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted"
+            aria-label={t("post.delete")}
+          >
             <Trash2 size={16} />
           </button>
         )}
@@ -239,24 +283,42 @@ export function PostCard({
           <>
             <div className="flex items-start gap-3">
               {post.image_url && (
-                <img src={post.image_url} alt="" className="h-16 w-16 rounded-lg object-cover border" />
+                <img
+                  src={post.image_url}
+                  alt=""
+                  className="h-16 w-16 rounded-lg object-cover border"
+                />
               )}
               <div className="min-w-0">
                 <h3 className="font-display text-xl font-bold leading-tight">
                   {post.token_name}
-                  {post.token_symbol && <span className="ml-2 text-sm font-normal text-primary">${post.token_symbol}</span>}
+                  {post.token_symbol && (
+                    <span className="ml-2 text-sm font-normal text-primary">
+                      ${post.token_symbol}
+                    </span>
+                  )}
                 </h3>
                 <div className="text-xs text-muted-foreground mt-0.5">
                   Rede: <span className="uppercase">{post.token_chain}</span>
                   {post.token_contract && (
-                    <> · <span className="font-mono break-all">{post.token_contract.slice(0, 8)}…{post.token_contract.slice(-6)}</span></>
+                    <>
+                      {" "}
+                      ·{" "}
+                      <span className="font-mono break-all">
+                        {post.token_contract.slice(0, 8)}…{post.token_contract.slice(-6)}
+                      </span>
+                    </>
                   )}
                 </div>
                 {(() => {
                   const safe = safeHttpUrl(post.token_link);
                   return safe ? (
-                    <a href={safe} target="_blank" rel="noopener noreferrer nofollow ugc"
-                      className="inline-block mt-1 text-xs text-primary hover:underline">
+                    <a
+                      href={safe}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow ugc"
+                      className="inline-block mt-1 text-xs text-primary hover:underline"
+                    >
                       Site do projeto ↗
                     </a>
                   ) : null;
@@ -270,14 +332,18 @@ export function PostCard({
           <>
             {post.title && <h3 className="font-display text-lg font-semibold">{post.title}</h3>}
             <TranslatedContent post={post} />
-            {post.image_url && <img src={post.image_url} alt="" className="rounded-lg border max-h-96" />}
+            {post.image_url && (
+              <img src={post.image_url} alt="" className="rounded-lg border max-h-96" />
+            )}
           </>
         )}
         {post.file_url && (
           <div className="rounded-lg border bg-muted/30 overflow-hidden">
             <div className="flex items-center gap-2 p-3 border-b">
               <FileText size={18} className="text-primary shrink-0" />
-              <span className="text-sm font-medium truncate flex-1">{post.file_name ?? "Arquivo PDF"}</span>
+              <span className="text-sm font-medium truncate flex-1">
+                {post.file_name ?? "Arquivo PDF"}
+              </span>
               <a
                 href={post.file_url}
                 target="_blank"
@@ -288,10 +354,19 @@ export function PostCard({
                 <Download size={14} /> Baixar
               </a>
             </div>
-            <object data={`${post.file_url}#toolbar=1&view=FitH`} type="application/pdf" className="w-full h-[500px] bg-background">
+            <object
+              data={`${post.file_url}#toolbar=1&view=FitH`}
+              type="application/pdf"
+              className="w-full h-[500px] bg-background"
+            >
               <div className="p-4 text-sm text-muted-foreground text-center">
                 Não foi possível exibir o PDF no navegador.{" "}
-                <a href={post.file_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <a
+                  href={post.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
                   Abrir em nova aba
                 </a>
               </div>
@@ -301,17 +376,29 @@ export function PostCard({
       </div>
 
       <footer className="px-3 pb-3 flex items-center gap-1 flex-wrap">
-        <Button variant="ghost" size="sm" onClick={() => toggleLike.mutate()} className={likeInfo?.liked ? "text-primary" : ""}>
-          <Heart size={16} className={likeInfo?.liked ? "fill-current" : ""} /> {likeInfo?.count ?? 0}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => toggleLike.mutate()}
+          className={likeInfo?.liked ? "text-primary" : ""}
+        >
+          <Heart size={16} className={likeInfo?.liked ? "fill-current" : ""} />{" "}
+          {likeInfo?.count ?? 0}
         </Button>
         <Link to="/post/$id" params={{ id: post.id }}>
-          <Button variant="ghost" size="sm"><MessageCircle size={16} /> {t("post.comment")}</Button>
+          <Button variant="ghost" size="sm">
+            <MessageCircle size={16} /> {t("post.comment")}
+          </Button>
         </Link>
         <RepostButton postId={post.id} />
         <div className="ml-auto flex items-center gap-1">
           <ShareButtons
             url={postUrl}
-            text={post.type === "token" ? `${post.token_name} ($${post.token_symbol}) na WEB3BRASIL` : (post.title ?? "Post na WEB3BRASIL")}
+            text={
+              post.type === "token"
+                ? `${post.token_name} ($${post.token_symbol}) na WEB3BRASIL`
+                : (post.title ?? "Post na WEB3BRASIL")
+            }
           />
         </div>
       </footer>
@@ -344,7 +431,9 @@ function Comments({ postId }: { postId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comments")
-        .select("id, content, created_at, user_id, parent_id, profiles(display_name, avatar_url, is_verified, account_type, telegram_handle, x_handle, instagram_handle)")
+        .select(
+          "id, content, created_at, user_id, parent_id, profiles(display_name, avatar_url, is_verified, account_type, telegram_handle, x_handle, instagram_handle, github_handle)",
+        )
         .eq("post_id", postId)
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -366,7 +455,12 @@ function Comments({ postId }: { postId: string }) {
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {
-      if (vars.parent_id) { setReplyText(""); setReplyTo(null); } else { setText(""); }
+      if (vars.parent_id) {
+        setReplyText("");
+        setReplyTo(null);
+      } else {
+        setText("");
+      }
       qc.invalidateQueries({ queryKey: ["comments", postId] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -391,9 +485,14 @@ function Comments({ postId }: { postId: string }) {
             <span className="font-medium text-foreground inline-flex items-center gap-1">
               {c.profiles?.display_name ?? "Usuário"}
               {c.profiles?.account_type === "ai_agent" && <AiAgentBadge compact />}
-              {c.profiles?.is_verified && c.profiles?.account_type !== "ai_agent" && <VerifiedBadge size={12} />}
+              {c.profiles?.is_verified && c.profiles?.account_type !== "ai_agent" && (
+                <VerifiedBadge size={12} />
+              )}
             </span>
-            <span>· {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: dateLocale })}</span>
+            <span>
+              ·{" "}
+              {formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: dateLocale })}
+            </span>
             {c.profiles && (
               <UserSocialTags
                 verified={!!c.profiles.is_verified}
@@ -401,6 +500,7 @@ function Comments({ postId }: { postId: string }) {
                   telegram_handle: c.profiles.telegram_handle ?? null,
                   x_handle: c.profiles.x_handle ?? null,
                   instagram_handle: c.profiles.instagram_handle ?? null,
+                  github_handle: c.profiles.github_handle ?? null,
                 }}
               />
             )}
@@ -408,7 +508,10 @@ function Comments({ postId }: { postId: string }) {
           <div className="text-sm whitespace-pre-wrap break-words">{linkifyText(c.content)}</div>
           {user && (
             <button
-              onClick={() => { setReplyTo(replyTo === c.id ? null : c.id); setReplyText(""); }}
+              onClick={() => {
+                setReplyTo(replyTo === c.id ? null : c.id);
+                setReplyText("");
+              }}
               className="mt-1 text-xs text-muted-foreground hover:text-primary"
             >
               {replyTo === c.id ? tc("post.cancel") : "Responder"}
@@ -416,7 +519,10 @@ function Comments({ postId }: { postId: string }) {
           )}
           {replyTo === c.id && user && (
             <form
-              onSubmit={(e) => { e.preventDefault(); add.mutate({ content: replyText, parent_id: c.id }); }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                add.mutate({ content: replyText, parent_id: c.id });
+              }}
               className="mt-2 flex gap-2 items-start"
             >
               <Textarea
@@ -448,12 +554,17 @@ function Comments({ postId }: { postId: string }) {
       <h4 className="text-sm font-semibold">{tc("post.comments")}</h4>
       <div className="space-y-3">
         {roots.map((c) => renderComment(c))}
-        {list.length === 0 && <div className="text-sm text-muted-foreground">{tc("post.new.noComments")}</div>}
+        {list.length === 0 && (
+          <div className="text-sm text-muted-foreground">{tc("post.new.noComments")}</div>
+        )}
       </div>
 
       {user ? (
         <form
-          onSubmit={(e) => { e.preventDefault(); add.mutate({ content: text, parent_id: null }); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            add.mutate({ content: text, parent_id: null });
+          }}
           className="flex gap-2 items-start"
         >
           {profile?.avatar_url ? (
@@ -463,12 +574,24 @@ function Comments({ postId }: { postId: string }) {
               {(profile?.display_name ?? "?")[0]}
             </div>
           )}
-          <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={tc("post.new.commentPlaceholder")} rows={2} maxLength={1000} className="flex-1" />
-          <Button type="submit" disabled={add.isPending || !text.trim()}>{tc("post.new.commentSend")}</Button>
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={tc("post.new.commentPlaceholder")}
+            rows={2}
+            maxLength={1000}
+            className="flex-1"
+          />
+          <Button type="submit" disabled={add.isPending || !text.trim()}>
+            {tc("post.new.commentSend")}
+          </Button>
         </form>
       ) : (
         <div className="text-sm text-muted-foreground">
-          <Link to="/auth" className="text-primary hover:underline">{tc("nav.signin")}</Link> {tc("post.new.signInToComment")}
+          <Link to="/auth" className="text-primary hover:underline">
+            {tc("nav.signin")}
+          </Link>{" "}
+          {tc("post.new.signInToComment")}
         </div>
       )}
     </div>
@@ -481,7 +604,7 @@ function TranslatedContent({ post }: { post: FeedPost }) {
   const original = post.content_original ?? post.content ?? "";
   const originalLang: "pt" | "en" = (post.original_language as "pt" | "en") ?? "pt";
   const cached = lang === "pt" ? post.content_pt : post.content_en;
-  const initialTranslated = originalLang === lang ? original : cached ?? null;
+  const initialTranslated = originalLang === lang ? original : (cached ?? null);
 
   const [translated, setTranslated] = useState<string | null>(initialTranslated);
   const [showOriginal, setShowOriginal] = useState(false);
@@ -490,7 +613,7 @@ function TranslatedContent({ post }: { post: FeedPost }) {
 
   useEffect(() => {
     const nextCached = lang === "pt" ? post.content_pt : post.content_en;
-    const next = originalLang === lang ? original : nextCached ?? null;
+    const next = originalLang === lang ? original : (nextCached ?? null);
     setTranslated(next);
     setFailed(false);
     setShowOriginal(false);
@@ -514,7 +637,9 @@ function TranslatedContent({ post }: { post: FeedPost }) {
       }
       setLoading(false);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [lang, originalLang, original, translated, loading, failed, post.id, user]);
 
   if (!original.trim()) return null;
@@ -526,7 +651,9 @@ function TranslatedContent({ post }: { post: FeedPost }) {
     <div className="space-y-1">
       <p className="text-sm whitespace-pre-wrap break-words">{linkifyText(shown)}</p>
       {failed && originalLang !== lang && (
-        <p className="text-[11px] text-muted-foreground italic">{t("post.translationUnavailable")}</p>
+        <p className="text-[11px] text-muted-foreground italic">
+          {t("post.translationUnavailable")}
+        </p>
       )}
       {isAutoTranslated && (
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
@@ -543,3 +670,5 @@ function TranslatedContent({ post }: { post: FeedPost }) {
     </div>
   );
 }
+
+
