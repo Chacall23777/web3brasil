@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { AiAgentBadge } from "@/components/AiAgentBadge";
 import { PostCard, type FeedPost } from "@/components/PostCard";
+import { UserSocialTags } from "@/components/UserSocialTags";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/u/$id")({
@@ -26,7 +27,9 @@ function PublicProfile() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, bio, is_verified, account_type, telegram_handle, x_handle, instagram_handle")
+        .select(
+          "id, display_name, avatar_url, bio, is_verified, account_type, telegram_handle, x_handle, instagram_handle, github_handle",
+        )
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -83,28 +86,84 @@ function PublicProfile() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const { data: posts } = useQuery({
-    queryKey: ["user-posts", id],
+  // Traz tanto as postagens originais do usuário quanto os posts que ele
+  // repostou (compartilhou), para aparecerem juntos no perfil — igual ao feed.
+  const { data: activity } = useQuery({
+    queryKey: ["user-activity", id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("posts")
-        .select("*, profiles(display_name, avatar_url, telegram_handle, x_handle, instagram_handle, is_verified, account_type)")
-        .eq("user_id", id)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      return (data ?? []) as unknown as FeedPost[];
+      const profilesSelect =
+        "display_name, avatar_url, telegram_handle, x_handle, instagram_handle, github_handle, is_verified, account_type";
+
+      const [{ data: ownPosts }, { data: repostRows }] = await Promise.all([
+        supabase
+          .from("posts")
+          .select(`*, profiles(${profilesSelect})`)
+          .eq("user_id", id)
+          .order("created_at", { ascending: false })
+          .limit(30),
+        supabase
+          .from("reposts")
+          .select("id, comment, created_at, original_post_id, profiles(display_name)")
+          .eq("user_id", id)
+          .order("created_at", { ascending: false })
+          .limit(30),
+      ]);
+
+      type Item = {
+        key: string;
+        post: FeedPost;
+        sortTime: number;
+        repostedBy?: { user_id: string; display_name: string | null } | null;
+        quoteComment?: string | null;
+      };
+
+      const items: Item[] = ((ownPosts ?? []) as unknown as FeedPost[]).map((p) => ({
+        key: `p:${p.id}`,
+        post: p,
+        sortTime: new Date(p.created_at).getTime(),
+      }));
+
+      const repostRowsList = (repostRows ?? []) as any[];
+      if (repostRowsList.length > 0) {
+        const originalIds = repostRowsList.map((r) => r.original_post_id);
+        const { data: originalPosts } = await supabase
+          .from("posts")
+          .select(`*, profiles(${profilesSelect})`)
+          .in("id", originalIds);
+        const byId = new Map(
+          ((originalPosts ?? []) as unknown as FeedPost[]).map((p) => [p.id, p]),
+        );
+        for (const r of repostRowsList) {
+          const original = byId.get(r.original_post_id);
+          if (!original) continue;
+          items.push({
+            key: `r:${r.id}`,
+            post: original,
+            sortTime: new Date(r.created_at).getTime(),
+            repostedBy: { user_id: id, display_name: r.profiles?.display_name ?? null },
+            quoteComment: r.comment ?? null,
+          });
+        }
+      }
+
+      return items.sort((a, b) => b.sortTime - a.sortTime).slice(0, 30);
     },
   });
 
   if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
-  if (!profile) return <div className="p-6 text-sm text-muted-foreground">Perfil não encontrado.</div>;
+  if (!profile)
+    return <div className="p-6 text-sm text-muted-foreground">Perfil não encontrado.</div>;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
       <div className="rounded-xl border bg-card p-5">
         <div className="flex items-center gap-4">
           {profile.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="h-20 w-20 rounded-full object-cover border" />
+            <img
+              src={profile.avatar_url}
+              alt=""
+              className="h-20 w-20 rounded-full object-cover border"
+            />
           ) : (
             <div className="h-20 w-20 rounded-full bg-primary/20 text-primary flex items-center justify-center text-2xl font-bold">
               {(profile.display_name ?? "?")[0]}
@@ -114,12 +173,35 @@ function PublicProfile() {
             <h1 className="font-display text-xl font-bold flex items-center gap-1 flex-wrap">
               <span className="truncate">{profile.display_name}</span>
               {profile.account_type === "ai_agent" && <AiAgentBadge />}
-              {profile.is_verified && profile.account_type !== "ai_agent" && <VerifiedBadge size={18} />}
+              {profile.is_verified && profile.account_type !== "ai_agent" && (
+                <VerifiedBadge size={18} />
+              )}
             </h1>
-            {profile.bio && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{profile.bio}</p>}
+            {profile.bio && (
+              <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
+                {profile.bio}
+              </p>
+            )}
+            <div className="mt-2">
+              <UserSocialTags
+                verified={!!profile.is_verified}
+                handles={{
+                  telegram_handle: profile.telegram_handle ?? null,
+                  x_handle: profile.x_handle ?? null,
+                  instagram_handle: profile.instagram_handle ?? null,
+                  github_handle: profile.github_handle ?? null,
+                }}
+              />
+            </div>
             <div className="flex gap-4 mt-2 text-sm">
-              <span><b>{counts?.followers ?? 0}</b> <span className="text-muted-foreground">seguidores</span></span>
-              <span><b>{counts?.following ?? 0}</b> <span className="text-muted-foreground">seguindo</span></span>
+              <span>
+                <b>{counts?.followers ?? 0}</b>{" "}
+                <span className="text-muted-foreground">seguidores</span>
+              </span>
+              <span>
+                <b>{counts?.following ?? 0}</b>{" "}
+                <span className="text-muted-foreground">seguindo</span>
+              </span>
             </div>
           </div>
         </div>
@@ -133,7 +215,15 @@ function PublicProfile() {
                   variant={iFollow ? "outline" : "default"}
                   className="flex-1"
                 >
-                  {iFollow ? <><UserCheck size={16} /> Seguindo</> : <><UserPlus size={16} /> Seguir</>}
+                  {iFollow ? (
+                    <>
+                      <UserCheck size={16} /> Seguindo
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus size={16} /> Seguir
+                    </>
+                  )}
                 </Button>
                 <Button
                   variant="outline"
@@ -144,7 +234,9 @@ function PublicProfile() {
                 </Button>
               </>
             ) : (
-              <Link to="/auth" className="flex-1"><Button className="w-full">Entrar para seguir</Button></Link>
+              <Link to="/auth" className="flex-1">
+                <Button className="w-full">Entrar para seguir</Button>
+              </Link>
             )}
           </div>
         )}
@@ -152,10 +244,19 @@ function PublicProfile() {
 
       <div className="space-y-4">
         <h2 className="font-display text-lg font-semibold">Postagens</h2>
-        {(posts ?? []).length === 0 ? (
-          <div className="text-sm text-muted-foreground rounded-xl border bg-card p-6 text-center">Nenhuma postagem ainda.</div>
+        {(activity ?? []).length === 0 ? (
+          <div className="text-sm text-muted-foreground rounded-xl border bg-card p-6 text-center">
+            Nenhuma postagem ainda.
+          </div>
         ) : (
-          posts?.map((p) => <PostCard key={p.id} post={p} />)
+          activity?.map((it) => (
+            <PostCard
+              key={it.key}
+              post={it.post}
+              repostedBy={it.repostedBy ?? null}
+              quoteComment={it.quoteComment ?? null}
+            />
+          ))
         )}
       </div>
     </div>
