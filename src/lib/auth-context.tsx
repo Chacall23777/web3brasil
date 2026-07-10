@@ -11,6 +11,7 @@ export type Profile = {
   telegram_handle: string | null;
   x_handle: string | null;
   instagram_handle: string | null;
+  github_handle: string | null;
   solana_wallet: string | null;
   is_verified: boolean;
   verified_method: string | null;
