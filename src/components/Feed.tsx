@@ -40,7 +40,14 @@ function engagementScore(p: FeedItem["post"], sortTime: number, now: number) {
   return engagement + recencyTiebreak;
 }
 
-export function Feed({ type }: { type?: "text" | "token" }) {
+export function Feed({
+  type,
+  sort = "hot",
+}: {
+  type?: "text" | "token";
+  /** "hot" ranqueia por engajamento + novidade; "recent" ordena só por data. */
+  sort?: "hot" | "recent";
+}) {
   const [visible, setVisible] = useState(PAGE_SIZE);
   // Recalcula o ranking periodicamente para que um post "novo" desça do topo
   // assim que completar 1 minuto, mesmo sem o usuário atualizar a página.
@@ -102,13 +109,21 @@ export function Feed({ type }: { type?: "text" | "token" }) {
 
   const sorted = useMemo(() => {
     if (!data) return [];
+    if (sort === "recent") {
+      return [...data].sort((a, b) => b.sortTime - a.sortTime).slice(0, 60);
+    }
     return [...data]
       .sort(
         (a, b) =>
           engagementScore(b.post, b.sortTime, now) - engagementScore(a.post, a.sortTime, now),
       )
       .slice(0, 60);
-  }, [data, now]);
+  }, [data, now, sort]);
+
+  // Volta pro topo da lista sempre que a aba de ordenação muda.
+  useEffect(() => {
+    setVisible(PAGE_SIZE);
+  }, [sort]);
 
   if (isLoading) return <div className="text-sm text-muted-foreground p-4">Carregando…</div>;
   if (error) return <div className="text-sm text-destructive p-4">Erro ao carregar o feed.</div>;
@@ -139,3 +154,4 @@ export function Feed({ type }: { type?: "text" | "token" }) {
     </div>
   );
 }
+
