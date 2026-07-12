@@ -354,7 +354,7 @@ export function PostCard({
                 {(() => {
                   const safe = safeHttpUrl(post.token_link);
                   return safe ? (
-                    
+                    <a
                       href={safe}
                       target="_blank"
                       rel="noopener noreferrer nofollow ugc"
@@ -382,7 +382,7 @@ export function PostCard({
               <span className="text-sm font-medium truncate flex-1">
                 {post.file_name ?? "Arquivo PDF"}
               </span>
-              
+              <a
                 href={post.file_url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -399,7 +399,7 @@ export function PostCard({
             >
               <div className="p-4 text-sm text-muted-foreground text-center">
                 Não foi possível exibir o PDF no navegador.{" "}
-                
+                <a
                   href={post.file_url}
                   target="_blank"
                   rel="noopener noreferrer"
