@@ -33,9 +33,6 @@ function engagementScore(p: FeedItem["post"], sortTime: number, now: number) {
   return engagement + recencyTiebreak;
 }
 
-// Afinidade "Para você": dá um empurrão extra a posts de quem o usuário segue
-// e de autores que ele costuma curtir — sem esconder o resto do feed, só
-// reordenando o que já apareceria de qualquer forma (nada de shadow-filter).
 const FOLLOW_BOOST = 5_000;
 const AFFINITY_PER_LIKE = 300;
 const AFFINITY_CAP = 1_500;
@@ -85,8 +82,28 @@ export function Feed({
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 10_000);
-    return () => clearInterval(t);
+    let t: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (t) return;
+      t = setInterval(() => setNow(Date.now()), 20_000);
+    };
+    const stop = () => {
+      if (t) clearInterval(t);
+      t = null;
+    };
+    const onVisibility = () => {
+      if (document.hidden) stop();
+      else {
+        setNow(Date.now());
+        start();
+      }
+    };
+    if (!document.hidden) start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   const { data: affinity } = useAffinitySignals(sort === "foryou" ? user?.id : null);
@@ -100,7 +117,7 @@ export function Feed({
           "*, profiles(display_name, avatar_url, telegram_handle, x_handle, instagram_handle, github_handle, is_verified, account_type)",
         )
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(60);
       if (type) q = q.eq("type", type);
       const { data: postsData, error: postsErr } = await q;
       if (postsErr) throw postsErr;
@@ -122,7 +139,7 @@ export function Feed({
             posts.map((p) => p.id),
           )
           .order("created_at", { ascending: false })
-          .limit(100);
+          .limit(60);
         for (const r of (repostsData ?? []) as any[]) {
           const original = postsById.get(r.original_post_id);
           if (!original) continue;
@@ -197,5 +214,4 @@ export function Feed({
     </div>
   );
 }
-
 
