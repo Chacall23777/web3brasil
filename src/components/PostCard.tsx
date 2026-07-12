@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
@@ -55,6 +55,9 @@ export type FeedPost = {
   content_pt?: string | null;
   content_en?: string | null;
   original_language?: "pt" | "en" | null;
+  likes_count?: number;
+  comments_count?: number;
+  reposts_count?: number;
   profiles: {
     display_name: string;
     avatar_url: string | null;
@@ -93,37 +96,64 @@ export function PostCard({
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(post.title ?? "");
   const [editContent, setEditContent] = useState(post.content ?? "");
+  const [heartBurst, setHeartBurst] = useState(false);
+  const lastTapRef = useRef(0);
 
-  const { data: likeInfo } = useQuery({
-    queryKey: ["post-likes", post.id, user?.id ?? "anon"],
+  const { data: liked } = useQuery({
+    queryKey: ["post-liked-by-me", post.id, user?.id ?? "anon"],
+    enabled: !!user,
     queryFn: async () => {
-      const [{ count }, mine] = await Promise.all([
-        supabase.from("likes").select("*", { count: "exact", head: true }).eq("post_id", post.id),
-        user
-          ? supabase
-              .from("likes")
-              .select("id")
-              .eq("post_id", post.id)
-              .eq("user_id", user.id)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
-      ]);
-      return { count: count ?? 0, liked: !!mine.data };
+      const { data } = await supabase
+        .from("likes")
+        .select("id")
+        .eq("post_id", post.id)
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return !!data;
     },
   });
+  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
+  const serverLiked = !!liked;
+  const displayLiked = optimisticLiked ?? serverLiked;
+  const displayCount =
+    (post.likes_count ?? 0) + (displayLiked === serverLiked ? 0 : displayLiked ? 1 : -1);
+  const likeInfo = { count: displayCount, liked: displayLiked };
 
   const toggleLike = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Entre para curtir");
-      if (likeInfo?.liked) {
-        await supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", user.id);
+      const wasLiked = likeInfo.liked;
+      setOptimisticLiked(!wasLiked);
+      if (wasLiked) {
+        const { error } = await supabase
+          .from("likes")
+          .delete()
+          .eq("post_id", post.id)
+          .eq("user_id", user.id);
+        if (error) throw error;
       } else {
-        await supabase.from("likes").insert({ post_id: post.id, user_id: user.id });
+        const { error } = await supabase
+          .from("likes")
+          .insert({ post_id: post.id, user_id: user.id });
+        if (error) throw error;
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["post-likes", post.id] }),
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["post-liked-by-me", post.id] }),
+    onError: (e: Error) => {
+      setOptimisticLiked(null);
+      toast.error(e.message);
+    },
   });
+
+  const handleImageTap = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      if (!likeInfo?.liked) toggleLike.mutate();
+      setHeartBurst(true);
+      window.setTimeout(() => setHeartBurst(false), 800);
+    }
+    lastTapRef.current = now;
+  };
 
   const deletePost = useMutation({
     mutationFn: async () => {
@@ -159,7 +189,10 @@ export function PostCard({
   const canDelete = user && (isOwner || isAdmin);
 
   return (
-    <article className="rounded-xl border bg-card overflow-hidden">
+    <article
+      className="rounded-xl border bg-card overflow-hidden"
+      style={{ contentVisibility: "auto", containIntrinsicSize: "0 420px" }}
+    >
       {repostedBy && (
         <div className="px-4 pt-3 text-xs text-emerald-500 flex items-center gap-1.5">
           <Repeat2 size={14} />
@@ -179,7 +212,13 @@ export function PostCard({
       <header className={`p-4 flex items-center gap-3 ${quoteComment ? "pt-3" : ""}`}>
         <Link to="/u/$id" params={{ id: post.user_id }} className="shrink-0">
           {author?.avatar_url ? (
-            <img src={author.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+            <img
+              src={author.avatar_url}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="h-10 w-10 rounded-full object-cover"
+            />
           ) : (
             <div className="h-10 w-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
               {(author?.display_name ?? "?")[0]}
@@ -286,6 +325,8 @@ export function PostCard({
                 <img
                   src={post.image_url}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="h-16 w-16 rounded-lg object-cover border"
                 />
               )}
@@ -313,7 +354,7 @@ export function PostCard({
                 {(() => {
                   const safe = safeHttpUrl(post.token_link);
                   return safe ? (
-                    <a
+                    
                       href={safe}
                       target="_blank"
                       rel="noopener noreferrer nofollow ugc"
@@ -332,9 +373,6 @@ export function PostCard({
           <>
             {post.title && <h3 className="font-display text-lg font-semibold">{post.title}</h3>}
             <TranslatedContent post={post} />
-            {post.image_url && (
-              <img src={post.image_url} alt="" className="rounded-lg border max-h-96" />
-            )}
           </>
         )}
         {post.file_url && (
@@ -344,7 +382,7 @@ export function PostCard({
               <span className="text-sm font-medium truncate flex-1">
                 {post.file_name ?? "Arquivo PDF"}
               </span>
-              <a
+              
                 href={post.file_url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -361,7 +399,7 @@ export function PostCard({
             >
               <div className="p-4 text-sm text-muted-foreground text-center">
                 Não foi possível exibir o PDF no navegador.{" "}
-                <a
+                
                   href={post.file_url}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -375,22 +413,44 @@ export function PostCard({
         )}
       </div>
 
-      <footer className="px-3 pb-3 flex items-center gap-1 flex-wrap">
+      {post.type === "text" && post.image_url && (
+        <div
+          className="relative select-none bg-black/5"
+          onClick={handleImageTap}
+          onTouchEnd={handleImageTap}
+        >
+          <img
+            src={post.image_url}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="w-full max-h-[520px] object-cover"
+          />
+          {heartBurst && (
+            <Heart
+              size={96}
+              className="absolute inset-0 m-auto text-white fill-white drop-shadow-lg animate-heart-burst pointer-events-none"
+            />
+          )}
+        </div>
+      )}
+
+      <footer className="px-3 pt-2 pb-1 flex items-center gap-0.5">
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={() => toggleLike.mutate()}
           className={likeInfo?.liked ? "text-primary" : ""}
+          aria-label={t("post.comment")}
         >
-          <Heart size={16} className={likeInfo?.liked ? "fill-current" : ""} />{" "}
-          {likeInfo?.count ?? 0}
+          <Heart size={22} className={likeInfo?.liked ? "fill-current" : ""} />
         </Button>
         <Link to="/post/$id" params={{ id: post.id }}>
-          <Button variant="ghost" size="sm">
-            <MessageCircle size={16} /> {t("post.comment")}
+          <Button variant="ghost" size="icon" aria-label={t("post.comment")}>
+            <MessageCircle size={22} />
           </Button>
         </Link>
-        <RepostButton postId={post.id} />
+        <RepostButton postId={post.id} count={post.reposts_count} />
         <div className="ml-auto flex items-center gap-1">
           <ShareButtons
             url={postUrl}
@@ -402,6 +462,29 @@ export function PostCard({
           />
         </div>
       </footer>
+
+      <div className="px-4 pb-3 space-y-1">
+        <p className="text-sm font-semibold">
+          {(likeInfo?.count ?? 0) > 0
+            ? `${likeInfo!.count} ${likeInfo!.count === 1 ? "curtida" : "curtidas"}`
+            : "Seja o primeiro a curtir"}
+        </p>
+        {(post.comments_count ?? 0) > 0 && !showComments && (
+          <Link
+            to="/post/$id"
+            params={{ id: post.id }}
+            className="block text-sm text-muted-foreground hover:text-foreground"
+          >
+            Ver{" "}
+            {post.comments_count === 1
+              ? "o comentário"
+              : `todos os ${post.comments_count} comentários`}
+          </Link>
+        )}
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}
+        </p>
+      </div>
 
       {showComments && <Comments postId={post.id} />}
     </article>
@@ -474,7 +557,13 @@ function Comments({ postId }: { postId: string }) {
     <div key={c.id} className={depth > 0 ? "ml-8 border-l pl-3" : ""}>
       <div className="flex gap-2">
         {c.profiles?.avatar_url ? (
-          <img src={c.profiles.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+          <img
+            src={c.profiles.avatar_url}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="h-8 w-8 rounded-full object-cover"
+          />
         ) : (
           <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
             {(c.profiles?.display_name ?? "?")[0]}
@@ -568,7 +657,13 @@ function Comments({ postId }: { postId: string }) {
           className="flex gap-2 items-start"
         >
           {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+            <img
+              src={profile.avatar_url}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="h-8 w-8 rounded-full object-cover"
+            />
           ) : (
             <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
               {(profile?.display_name ?? "?")[0]}
@@ -670,5 +765,4 @@ function TranslatedContent({ post }: { post: FeedPost }) {
     </div>
   );
 }
-
 
