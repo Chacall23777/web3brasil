@@ -73,11 +73,16 @@
 }
 
 @keyframes verified-pulse {
-  0%, 100% { filter: brightness(1) saturate(1); transform: scale(1); }
-  50% { filter: brightness(1.2) saturate(1.4); transform: scale(1.05); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 }
 @utility animate-verified-pulse {
-  animation: verified-pulse 1.6s ease-in-out infinite;
+  animation: verified-pulse 2.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-verified-pulse {
+    animation: none;
+  }
 }
 
 @keyframes adshine {
