@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { PostCard, type FeedPost } from "./PostCard";
 
@@ -12,15 +13,8 @@ type FeedItem = {
   quoteComment?: string | null;
 };
 
-// Regra de ranqueamento do feed:
-// - Nos primeiros 60 segundos, o post é "novo" e ganha um bônus fixo enorme,
-//   garantindo que fique no topo (ordenado entre os novos pelo mais recente).
-// - Depois de 1 minuto, o bônus de novidade some e a ordem passa a depender
-//   só do engajamento (curtidas, comentários, reposts). Um empurrãozinho
-//   quase invisível de recência só serve pra desempatar posts com o mesmo
-//   engajamento (o mais recente fica levemente à frente).
-const NEW_POST_WINDOW_MS = 60 * 1000; // 1 minuto
-const NEW_POST_BOOST = 1_000_000; // bem maior que qualquer engajamento real
+const NEW_POST_WINDOW_MS = 60 * 1000;
+const NEW_POST_BOOST = 1_000_000;
 const PAGE_SIZE = 15;
 
 function engagementScore(p: FeedItem["post"], sortTime: number, now: number) {
@@ -31,7 +25,6 @@ function engagementScore(p: FeedItem["post"], sortTime: number, now: number) {
   const ageMs = Math.max(0, now - sortTime);
 
   if (ageMs < NEW_POST_WINDOW_MS) {
-    // Quanto mais novo, maior o bônus (para ordenar corretamente entre os recentes)
     return NEW_POST_BOOST + (NEW_POST_WINDOW_MS - ageMs);
   }
 
@@ -40,22 +33,63 @@ function engagementScore(p: FeedItem["post"], sortTime: number, now: number) {
   return engagement + recencyTiebreak;
 }
 
+// Afinidade "Para você": dá um empurrão extra a posts de quem o usuário segue
+// e de autores que ele costuma curtir — sem esconder o resto do feed, só
+// reordenando o que já apareceria de qualquer forma (nada de shadow-filter).
+const FOLLOW_BOOST = 5_000;
+const AFFINITY_PER_LIKE = 300;
+const AFFINITY_CAP = 1_500;
+
+function useAffinitySignals(userId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["feed_affinity", userId ?? "anon"],
+    enabled: !!userId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const [{ data: followRows }, { data: likeRows }] = await Promise.all([
+        supabase.from("follows").select("following_id").eq("follower_id", userId!),
+        supabase.from("likes").select("post_id, posts(user_id)").eq("user_id", userId!).limit(300),
+      ]);
+      const following = new Set((followRows ?? []).map((r: any) => r.following_id as string));
+      const likeCountByAuthor = new Map<string, number>();
+      for (const r of (likeRows ?? []) as any[]) {
+        const authorId = r.posts?.user_id as string | undefined;
+        if (!authorId) continue;
+        likeCountByAuthor.set(authorId, (likeCountByAuthor.get(authorId) ?? 0) + 1);
+      }
+      return { following, likeCountByAuthor };
+    },
+  });
+}
+
+function affinityBoost(
+  authorId: string,
+  signals: { following: Set<string>; likeCountByAuthor: Map<string, number> } | undefined,
+) {
+  if (!signals) return 0;
+  let boost = 0;
+  if (signals.following.has(authorId)) boost += FOLLOW_BOOST;
+  const likedBefore = signals.likeCountByAuthor.get(authorId) ?? 0;
+  boost += Math.min(likedBefore * AFFINITY_PER_LIKE, AFFINITY_CAP);
+  return boost;
+}
+
 export function Feed({
   type,
   sort = "hot",
 }: {
   type?: "text" | "token";
-  /** "hot" ranqueia por engajamento + novidade; "recent" ordena só por data. */
-  sort?: "hot" | "recent";
+  sort?: "foryou" | "hot" | "recent";
 }) {
+  const { user } = useAuth();
   const [visible, setVisible] = useState(PAGE_SIZE);
-  // Recalcula o ranking periodicamente para que um post "novo" desça do topo
-  // assim que completar 1 minuto, mesmo sem o usuário atualizar a página.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 10_000);
     return () => clearInterval(t);
   }, []);
+
+  const { data: affinity } = useAffinitySignals(sort === "foryou" ? user?.id : null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["feed", type ?? "all"],
@@ -79,7 +113,6 @@ export function Feed({
         sortTime: new Date(p.created_at).getTime(),
       }));
 
-      // Only pull reposts of posts we already fetched (avoids extra join)
       if (!type && posts.length > 0) {
         const { data: repostsData } = await supabase
           .from("reposts")
@@ -112,15 +145,25 @@ export function Feed({
     if (sort === "recent") {
       return [...data].sort((a, b) => b.sortTime - a.sortTime).slice(0, 60);
     }
+    if (sort === "foryou") {
+      return [...data]
+        .sort((a, b) => {
+          const scoreA =
+            engagementScore(a.post, a.sortTime, now) + affinityBoost(a.post.user_id, affinity);
+          const scoreB =
+            engagementScore(b.post, b.sortTime, now) + affinityBoost(b.post.user_id, affinity);
+          return scoreB - scoreA;
+        })
+        .slice(0, 60);
+    }
     return [...data]
       .sort(
         (a, b) =>
           engagementScore(b.post, b.sortTime, now) - engagementScore(a.post, a.sortTime, now),
       )
       .slice(0, 60);
-  }, [data, now, sort]);
+  }, [data, now, sort, affinity]);
 
-  // Volta pro topo da lista sempre que a aba de ordenação muda.
   useEffect(() => {
     setVisible(PAGE_SIZE);
   }, [sort]);
@@ -154,4 +197,5 @@ export function Feed({
     </div>
   );
 }
+
 
