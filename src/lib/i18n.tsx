@@ -17,6 +17,7 @@ const dict = {
     "nav.signout": "Sair",
     "nav.profile": "Perfil",
     "community.title": "Comunidade",
+    "community.tab.foryou": "Para você",
     "community.tab.hot": "Em alta",
     "community.tab.recent": "Recentes",
     "post.comment": "Comentar",
@@ -65,6 +66,7 @@ const dict = {
     "nav.signout": "Sign out",
     "nav.profile": "Profile",
     "community.title": "Community",
+    "community.tab.foryou": "For You",
     "community.tab.hot": "Hot",
     "community.tab.recent": "Recent",
     "post.comment": "Comment",
@@ -125,7 +127,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const { user, profile } = useAuth();
   const [lang, setLangState] = useState<Lang>(initial);
 
-  // Sync from profile once loaded
   useEffect(() => {
     const pref = profile?.preferred_language;
     if (pref === "pt" || pref === "en") {
@@ -155,3 +156,4 @@ export function useI18n() {
   if (!v) throw new Error("useI18n must be inside I18nProvider");
   return v;
 }
+
