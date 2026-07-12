@@ -18,9 +18,12 @@ import { adminSendBroadcastEmail, adminListBroadcastHistory } from "@/lib/broadc
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { AdsAdmin } from "@/components/AdsAdmin";
 import { AiAgentsAdmin } from "@/components/AiAgentsAdmin";
+
+export const Route = createFileRoute("/admin")({
   component: AdminPage,
   head: () => ({ meta: [{ title: "Admin — WEB3BRASIL" }] }),
 });
+
 
 function AdminPage() {
   const { user, isAdmin, loading } = useAuth();
@@ -38,15 +41,7 @@ function AdminPage() {
       <h1 className="font-display text-2xl font-bold">Admin</h1>
       <Tabs defaultValue="stats">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="stats">Estatísticas</TabsTrigger>
-          <TabsTrigger value="social">Redes sociais</TabsTrigger>
-          <TabsTrigger value="team">Equipe</TabsTrigger>
-          <TabsTrigger value="posts">Postagens</TabsTrigger>
-          <TabsTrigger value="ticker">Cotação (Ticker)</TabsTrigger>
-          <TabsTrigger value="verified">Verificados</TabsTrigger>
-          <TabsTrigger value="ads">Anúncios</TabsTrigger>
-          <TabsTrigger value="agents">Agentes de IA</TabsTrigger>
-<TabsList className="flex-wrap h-auto">
+
           <TabsTrigger value="stats">Estatísticas</TabsTrigger>
           <TabsTrigger value="social">Redes sociais</TabsTrigger>
           <TabsTrigger value="team">Equipe</TabsTrigger>
