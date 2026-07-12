@@ -6,17 +6,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fileToResizedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
-import { Trash2, Loader2, Search, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, Crown } from "lucide-react";
+import { Trash2, Loader2, Search, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, Crown, Mail } from "lucide-react";
 import { lookupToken, getUsdBrlRate, formatBRL, type TokenInfo } from "@/lib/token-lookup";
 import { adminSearchUsers, adminSetVerified, adminPromoteToAdmin, adminDemoteFromAdmin } from "@/lib/verification.functions";
+import { adminSendBroadcastEmail, adminListBroadcastHistory } from "@/lib/broadcast.functions";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { AdsAdmin } from "@/components/AdsAdmin";
 import { AiAgentsAdmin } from "@/components/AiAgentsAdmin";
-
-export const Route = createFileRoute("/admin")({
   component: AdminPage,
   head: () => ({ meta: [{ title: "Admin — WEB3BRASIL" }] }),
 });
@@ -45,11 +46,22 @@ function AdminPage() {
           <TabsTrigger value="verified">Verificados</TabsTrigger>
           <TabsTrigger value="ads">Anúncios</TabsTrigger>
           <TabsTrigger value="agents">Agentes de IA</TabsTrigger>
+<TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="stats">Estatísticas</TabsTrigger>
+          <TabsTrigger value="social">Redes sociais</TabsTrigger>
+          <TabsTrigger value="team">Equipe</TabsTrigger>
+          <TabsTrigger value="posts">Postagens</TabsTrigger>
+          <TabsTrigger value="email">E-mail</TabsTrigger>
+          <TabsTrigger value="ticker">Cotação (Ticker)</TabsTrigger>
+          <TabsTrigger value="verified">Verificados</TabsTrigger>
+          <TabsTrigger value="ads">Anúncios</TabsTrigger>
+          <TabsTrigger value="agents">Agentes de IA</TabsTrigger>
         </TabsList>
         <TabsContent value="stats" className="mt-4"><StatsPanel /></TabsContent>
         <TabsContent value="social" className="mt-4"><SocialForm /></TabsContent>
         <TabsContent value="team" className="mt-4"><TeamAdmin /></TabsContent>
         <TabsContent value="posts" className="mt-4"><PostsAdmin /></TabsContent>
+        <TabsContent value="email" className="mt-4"><BroadcastEmailAdmin /></TabsContent>
         <TabsContent value="ticker" className="mt-4"><TickerAdmin /></TabsContent>
         <TabsContent value="verified" className="mt-4"><VerifiedAdmin /></TabsContent>
         <TabsContent value="ads" className="mt-4"><AdsAdmin /></TabsContent>
@@ -646,7 +658,116 @@ function MemberEditor({ member, onSave, onDelete }: { member: any; onSave: (m: a
     </div>
   );
 }
+function BroadcastEmailAdmin() {
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [postId, setPostId] = useState<string>("none");
+  const sendFn = useServerFn(adminSendBroadcastEmail);
+  const historyFn = useServerFn(adminListBroadcastHistory);
+  const qc = useQueryClient();
 
+  const { data: posts } = useQuery({
+    queryKey: ["admin_posts_for_broadcast"],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("posts")
+          .select("id, title, token_name, type, created_at")
+          .order("created_at", { ascending: false })
+          .limit(30)
+      ).data ?? [],
+  });
+
+  const { data: history } = useQuery({
+    queryKey: ["broadcast_history"],
+    queryFn: async () => (await historyFn()).history,
+  });
+
+  const send = useMutation({
+    mutationFn: async () => {
+      if (!subject.trim() || !message.trim()) throw new Error("Preencha assunto e mensagem.");
+      return sendFn({
+        data: { subject: subject.trim(), message: message.trim(), post_id: postId === "none" ? null : postId },
+      });
+    },
+    onSuccess: (res) => {
+      toast.success(`E-mail enviado para ${res.count} cadastro(s).`);
+      setSubject("");
+      setMessage("");
+      setPostId("none");
+      qc.invalidateQueries({ queryKey: ["broadcast_history"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const confirmAndSend = () => {
+    if (!subject.trim() || !message.trim()) {
+      toast.error("Preencha assunto e mensagem.");
+      return;
+    }
+    if (confirm("Enviar este e-mail para TODOS os cadastrados na plataforma? Essa ação não pode ser desfeita.")) {
+      send.mutate();
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <h3 className="font-semibold flex items-center gap-2">
+          <Mail size={18} /> Enviar postagem/aviso por e-mail
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Envia um e-mail para todos os endereços cadastrados na plataforma (login via Gmail/Google).
+        </p>
+        <Input placeholder="Assunto" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={150} />
+        <Textarea
+          placeholder="Mensagem…"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={6}
+          maxLength={5000}
+        />
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Vincular a uma postagem (opcional)</label>
+          <Select value={postId} onValueChange={setPostId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Nenhuma" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Nenhuma</SelectItem>
+              {(posts ?? []).map((p: any) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.token_name ?? p.title ?? p.id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={confirmAndSend} disabled={send.isPending}>
+          {send.isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : <Mail className="mr-2" size={16} />}
+          Enviar para todos os cadastrados
+        </Button>
+      </div>
+
+      <div className="rounded-xl border bg-card">
+        <div className="p-3 border-b text-sm font-semibold">Histórico de envios</div>
+        <div className="divide-y">
+          {(history ?? []).map((h: any) => (
+            <div key={h.id} className="p-3">
+              <div className="text-sm font-medium truncate">{h.subject}</div>
+              <div className="text-xs text-muted-foreground">
+                {h.recipients_count} destinatário(s) · {new Date(h.created_at).toLocaleString("pt-BR")}
+              </div>
+            </div>
+          ))}
+          {(!history || history.length === 0) && (
+            <div className="p-6 text-center text-sm text-muted-foreground">Nenhum e-mail enviado ainda.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 function PostsAdmin() {
   const qc = useQueryClient();
   const { data } = useQuery({
