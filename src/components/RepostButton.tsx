@@ -72,5 +72,75 @@ export function RepostButton({ postId, count: knownCount }: { postId: string; co
         comment: payload.comment,
       } as any);
       if (error) throw error;
-      return
+      return "created" as const;
+    },
+    onSuccess: (result) => {
+      toast.success(result === "removed" ? "Repost removido" : "Repost publicado");
+      setQuoteOpen(false);
+      setComment("");
+      qc.invalidateQueries({ queryKey: ["feed"] });
+      qc.invalidateQueries({ queryKey: ["reposts-count", postId] });
+      qc.invalidateQueries({ queryKey: ["reposts-mine", postId] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
+  const submitQuote = () => doRepost.mutate({ comment: comment.trim() || null });
+
+  return (
+    <>
+      <DropdownMenu open={listOpen} onOpenChange={setListOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={info.reposted ? "text-primary" : ""}
+            aria-label="Repostar"
+          >
+            <Repeat2 size={22} />
+            {info.count > 0 && <span className="text-xs">{info.count}</span>}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={() => doRepost.mutate({ comment: null })}>
+            <Repeat2 size={16} />
+            {info.reposted ? "Remover repost" : "Repostar"}
+          </DropdownMenuItem>
+          {!info.reposted && (
+            <DropdownMenuItem onClick={() => setQuoteOpen(true)}>
+              <Quote size={16} />
+              Repostar com comentário
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem asChild>
+            <Link to="/post/$id" params={{ id: postId }}>
+              Ver postagem
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={quoteOpen} onOpenChange={setQuoteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Repostar com comentário</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            placeholder="Adicione um comentário"
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuoteOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={submitQuote} disabled={doRepost.isPending}>
+              Publicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
