@@ -30,6 +30,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as UNNameRouteImport } from './routes/u.n.$name'
 import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiV1PostsPost_idLikeRouteImport } from './routes/api/v1/posts.$post_id.like'
 import { Route as ApiV1PostsPost_idCommentsRouteImport } from './routes/api/v1/posts.$post_id.comments'
 
@@ -141,6 +142,12 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1PostsPost_idLikeRoute = ApiV1PostsPost_idLikeRouteImport.update({
   id: '/$post_id/like',
   path: '/$post_id/like',
@@ -175,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/u/n/$name': typeof UNNameRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
   '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
@@ -199,6 +207,7 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/u/n/$name': typeof UNNameRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
   '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
@@ -225,6 +234,7 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
   '/u/n/$name': typeof UNNameRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/api/v1/posts/$post_id/comments': typeof ApiV1PostsPost_idCommentsRoute
   '/api/v1/posts/$post_id/like': typeof ApiV1PostsPost_idLikeRoute
 }
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
     | '/u/n/$name'
+    | '/lovable/email/queue/process'
     | '/api/v1/posts/$post_id/comments'
     | '/api/v1/posts/$post_id/like'
   fileRoutesByTo: FileRoutesByTo
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
     | '/u/n/$name'
+    | '/lovable/email/queue/process'
     | '/api/v1/posts/$post_id/comments'
     | '/api/v1/posts/$post_id/like'
   id:
@@ -301,6 +313,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/v1/posts'
     | '/u/n/$name'
+    | '/lovable/email/queue/process'
     | '/api/v1/posts/$post_id/comments'
     | '/api/v1/posts/$post_id/like'
   fileRoutesById: FileRoutesById
@@ -325,6 +338,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiV1PostsRoute: typeof ApiV1PostsRouteWithChildren
   UNNameRoute: typeof UNNameRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -476,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/posts/$post_id/like': {
       id: '/api/v1/posts/$post_id/like'
       path: '/$post_id/like'
@@ -542,6 +563,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiV1PostsRoute: ApiV1PostsRouteWithChildren,
   UNNameRoute: UNNameRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
