@@ -23,11 +23,15 @@ function Comunidade() {
     <div className="mx-auto max-w-3xl px-4 py-6 space-y-6">
       <h1 className="font-display text-2xl font-bold">{t("community.title")}</h1>
       <NewPostForm />
-      <Tabs defaultValue="hot">
+      <Tabs defaultValue="foryou">
         <TabsList>
+          <TabsTrigger value="foryou">{t("community.tab.foryou")}</TabsTrigger>
           <TabsTrigger value="hot">{t("community.tab.hot")}</TabsTrigger>
           <TabsTrigger value="recent">{t("community.tab.recent")}</TabsTrigger>
         </TabsList>
+        <TabsContent value="foryou">
+          <Feed sort="foryou" />
+        </TabsContent>
         <TabsContent value="hot">
           <Feed sort="hot" />
         </TabsContent>
@@ -38,4 +42,5 @@ function Comunidade() {
     </div>
   );
 }
+
 
