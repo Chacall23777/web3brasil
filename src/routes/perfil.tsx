@@ -93,8 +93,11 @@ function PerfilPage() {
         .from("avatars")
         .upload(path, blob, { contentType: "image/png", upsert: true });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      setAvatar(pub.publicUrl);
+      const { data: signed, error: signedErr } = await supabase.storage
+        .from("avatars")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      if (signedErr || !signed) throw signedErr ?? new Error("Falha ao gerar link da foto");
+      setAvatar(signed.signedUrl);
       toast.success("Foto carregada — clique em salvar");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não deu para enviar a imagem");
