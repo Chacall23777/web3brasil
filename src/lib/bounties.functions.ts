@@ -2,7 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const RPC_URL = "https://api.mainnet-beta.solana.com";
+const RPC_URLS = [
+  "https://solana-rpc.publicnode.com",
+  "https://api.mainnet-beta.solana.com",
+  "https://rpc.ankr.com/solana",
+  "https://solana.drpc.org",
+];
+const RPC_URL = RPC_URLS[0];
 const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 
 const BANNED_PATTERNS: RegExp[] = [
@@ -18,32 +24,35 @@ function containsBannedContent(text: string): boolean {
 }
 
 async function rpcCall(method: string, params: unknown[]): Promise<any> {
-  const delays = [0, 800, 1800, 3500];
+  const delays = [0, 500, 1200, 2500];
   let lastErr: unknown;
   for (const d of delays) {
     if (d) await new Promise((r) => setTimeout(r, d));
-    try {
-      const res = await fetch(RPC_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-      });
-      if (res.status === 429 || res.status >= 500) {
-        lastErr = new Error(`RPC ${res.status}`);
-        continue;
+    for (const url of RPC_URLS) {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+        });
+        if (res.status === 429 || res.status >= 500) {
+          lastErr = new Error(`RPC ${res.status} @ ${url}`);
+          continue;
+        }
+        const j = await res.json();
+        if (j.error) {
+          lastErr = new Error(String(j.error?.message ?? ""));
+          continue;
+        }
+        return j.result;
+      } catch (e) {
+        lastErr = e;
       }
-      const j = await res.json();
-      if (j.error) {
-        lastErr = new Error(String(j.error?.message ?? ""));
-        continue;
-      }
-      return j.result;
-    } catch (e) {
-      lastErr = e;
     }
   }
   throw new Error("RPC da Solana indisponível no momento. Tente novamente em instantes.");
 }
+
 
 function findTransferInstruction(
   tx: any,
