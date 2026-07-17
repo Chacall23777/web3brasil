@@ -59,17 +59,28 @@ function decimalToRawUnits(value: number, decimals: number): bigint {
   return BigInt(`${whole || "0"}${paddedFraction || ""}`);
 }
 
+const TOKEN_PROGRAM_IDS = [
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", // SPL Token classic
+  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb", // Token-2022
+];
+
 async function getVaultTokenBalance(owner: string, mint: string): Promise<bigint> {
-  const result = await rpcCall("getTokenAccountsByOwner", [
-    owner,
-    { mint },
-    { encoding: "jsonParsed", commitment: "confirmed" },
-  ]);
-  const accounts: any[] = result?.value ?? [];
   let total = 0n;
-  for (const account of accounts) {
-    const amount = account?.account?.data?.parsed?.info?.tokenAmount?.amount;
-    if (amount) total += BigInt(amount);
+  for (const programId of TOKEN_PROGRAM_IDS) {
+    try {
+      const result = await rpcCall("getTokenAccountsByOwner", [
+        owner,
+        { mint, programId },
+        { encoding: "jsonParsed", commitment: "confirmed" },
+      ]);
+      const accounts: any[] = result?.value ?? [];
+      for (const account of accounts) {
+        const amount = account?.account?.data?.parsed?.info?.tokenAmount?.amount;
+        if (amount) total += BigInt(amount);
+      }
+    } catch {
+      // try next program
+    }
   }
   return total;
 }
@@ -247,14 +258,31 @@ async function payoutFromVault(
 
   const mintPk = new PublicKey(bounty.token_mint);
   const toPk = new PublicKey(toBase58);
-  const fromAta = spl.getAssociatedTokenAddressSync(mintPk, vaultKeypair.publicKey, true);
-  const toAta = spl.getAssociatedTokenAddressSync(mintPk, toPk, true);
+
+  // Detect token program (classic SPL vs Token-2022) from the mint account owner.
+  const mintInfo = await conn.getAccountInfo(mintPk);
+  if (!mintInfo) throw new Error("Mint não encontrado on-chain.");
+  const tokenProgramId = mintInfo.owner;
+
+  const fromAta = spl.getAssociatedTokenAddressSync(
+    mintPk,
+    vaultKeypair.publicKey,
+    true,
+    tokenProgramId,
+  );
+  const toAta = spl.getAssociatedTokenAddressSync(mintPk, toPk, true, tokenProgramId);
 
   const tx = new Transaction();
   const toAtaInfo = await conn.getAccountInfo(toAta);
   if (!toAtaInfo) {
     tx.add(
-      spl.createAssociatedTokenAccountInstruction(vaultKeypair.publicKey, toAta, toPk, mintPk),
+      spl.createAssociatedTokenAccountInstruction(
+        vaultKeypair.publicKey,
+        toAta,
+        toPk,
+        mintPk,
+        tokenProgramId,
+      ),
     );
   }
   const raw = BigInt(Math.round(bounty.reward_amount * 10 ** bounty.token_decimals));
@@ -266,6 +294,8 @@ async function payoutFromVault(
       vaultKeypair.publicKey,
       raw,
       bounty.token_decimals,
+      [],
+      tokenProgramId,
     ),
   );
 
