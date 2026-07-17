@@ -19,6 +19,7 @@ async function loadWeb3(): Promise<any> {
 
 async function loadSpl(): Promise<any> {
   if (import.meta.env.SSR) throw new Error("Solana libs are browser-only");
+  await ensureSolanaBufferPolyfill();
   if (_spl) return _spl;
   _spl = await import("@solana/spl-token");
   return _spl;
