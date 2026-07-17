@@ -532,9 +532,11 @@ function BountyDetailDialog({
   const submitProofFn = useServerFn(submitBountyProof);
   const reviewFn = useServerFn(reviewBountySubmission);
   const refundFn = useServerFn(refundBounty);
+  const confirmDepositFn = useServerFn(confirmBountyDeposit);
   const [proofUrl, setProofUrl] = useState("");
   const [note, setNote] = useState("");
   const [wallet, setWallet] = useState(profile?.solana_wallet ?? "");
+  const [depositSig, setDepositSig] = useState("");
   const [busy, setBusy] = useState(false);
 
   const { data: submissions, refetch } = useQuery({
@@ -603,6 +605,21 @@ function BountyDetailDialog({
     }
   };
 
+  const doConfirmDeposit = async () => {
+    setBusy(true);
+    try {
+      await confirmDepositFn({
+        data: { bounty_id: bounty.id, signature: depositSig.trim() || undefined },
+      });
+      toast.success("Depósito confirmado — bounty publicada!");
+      onChanged({ ...bounty, status: "open" });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível confirmar o depósito.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
@@ -633,6 +650,30 @@ function BountyDetailDialog({
             </div>
           )}
         </div>
+
+        {isCreator && bounty.status === "awaiting_deposit" && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-3">
+            <div className="font-medium text-sm flex items-center gap-1.5">
+              <Wallet className="h-4 w-4" /> Confirmar depósito
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Envie {bounty.reward_amount.toLocaleString("pt-BR")} {bounty.token_symbol ?? "tokens"} para o cofre e clique em verificar. A validação lê o saldo real on-chain.
+            </p>
+            <div className="rounded-md border bg-background p-2">
+              <div className="text-xs text-muted-foreground mb-1">Endereço do cofre</div>
+              <code className="text-xs break-all">{bounty.vault_address}</code>
+            </div>
+            <Input
+              value={depositSig}
+              onChange={(e) => setDepositSig(e.target.value)}
+              placeholder="Assinatura da transação (opcional)"
+            />
+            <Button size="sm" onClick={doConfirmDeposit} disabled={busy} className="w-full">
+              {busy && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+              Verificar depósito e publicar
+            </Button>
+          </div>
+        )}
 
         {isCreator && bounty.status === "open" && (
           <div className="rounded-lg border p-3 text-sm text-muted-foreground flex items-center justify-between gap-2">
