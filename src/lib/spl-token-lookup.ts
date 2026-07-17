@@ -2,12 +2,58 @@
 // tokens created on this site), so bounties/streams can use any existing token.
 export const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
 
+// The public mainnet-beta RPC is heavily rate-limited and frequently
+// rejects/times out requests coming straight from a browser. Fall back to
+// other public endpoints so a single provider hiccup doesn't break lookups.
+const RPC_FALLBACKS = [
+  SOLANA_RPC,
+  "https://solana-rpc.publicnode.com",
+  "https://rpc.ankr.com/solana",
+];
+
 let _web3: any | undefined;
 async function loadWeb3(): Promise<any> {
   if (import.meta.env.SSR) throw new Error("Solana libs are browser-only");
   if (_web3) return _web3;
   _web3 = await import("@solana/web3.js");
   return _web3;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("timeout")), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
+    );
+  });
+}
+
+/**
+ * Fetches the parsed mint account, trying each fallback RPC in turn.
+ * Throws a descriptive error only after every endpoint has failed.
+ */
+async function getMintAccountInfo(mintPk: any): Promise<any> {
+  const { Connection } = await loadWeb3();
+  let lastErr: unknown;
+  for (const url of RPC_FALLBACKS) {
+    try {
+      const conn = new Connection(url, "confirmed");
+      return await withTimeout(conn.getParsedAccountInfo(mintPk), 8000);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  const detail = lastErr instanceof Error ? lastErr.message : String(lastErr);
+  throw new Error(
+    `Não foi possível consultar a Solana agora (todas as RPCs falharam: ${detail}). Tente de novo em alguns segundos.`,
+  );
 }
 
 export type TokenInfo = {
@@ -45,84 +91,7 @@ export async function lookupToken(mintAddress: string): Promise<TokenInfo> {
   const trimmed = mintAddress.trim();
   if (!trimmed) throw new Error("Informe o endereço do token.");
 
-  const { Connection, PublicKey } = await loadWeb3();
+  const { PublicKey } = await loadWeb3();
   let mintPk: any;
   try {
-    mintPk = new PublicKey(trimmed);
-  } catch {
-    throw new Error("Endereço de token inválido.");
-  }
-
-  const conn = new Connection(SOLANA_RPC, "confirmed");
-  const accountInfo = await conn.getParsedAccountInfo(mintPk);
-  const parsed = (accountInfo?.value?.data as any)?.parsed;
-  if (!parsed || parsed.type !== "mint") {
-    throw new Error("Esse endereço não corresponde a um token SPL válido na Solana.");
-  }
-  const decimals: number = parsed.info.decimals;
-
-  const meta = await fetchJupiterMeta(trimmed);
-
-  return {
-    mint: trimmed,
-    decimals,
-    symbol: meta?.symbol ?? null,
-    name: meta?.name ?? null,
-    logoURI: meta?.logoURI ?? null,
-  };
-}
-
-export async function getSplBalance(ownerBase58: string, mintAddress: string): Promise<number> {
-  const { Connection, PublicKey } = await loadWeb3();
-  const spl = await import("@solana/spl-token");
-  const conn = new Connection(SOLANA_RPC, "confirmed");
-  const mintPk = new PublicKey(mintAddress);
-  const ownerPk = new PublicKey(ownerBase58);
-  const ata = spl.getAssociatedTokenAddressSync(mintPk, ownerPk, true);
-  try {
-    const acct = await spl.getAccount(conn, ata);
-    const mintInfo = await spl.getMint(conn, mintPk);
-    return Number(acct.amount) / 10 ** mintInfo.decimals;
-  } catch (e: any) {
-    if (String(e?.message ?? "").includes("TokenAccountNotFound")) return 0;
-    throw e;
-  }
-}
-
-/**
- * Builds (unsigned) a transaction transferring `amount` of `mintAddress`
- * from the connected wallet to `toBase58`, creating the destination's
- * associated token account if needed. Caller signs & sends.
- */
-export async function buildSplTransferTx(
-  fromBase58: string,
-  toBase58: string,
-  mintAddress: string,
-  amount: number,
-  decimals: number,
-): Promise<any> {
-  const { Connection, PublicKey, Transaction } = await loadWeb3();
-  const spl = await import("@solana/spl-token");
-  const conn = new Connection(SOLANA_RPC, "confirmed");
-  const mintPk = new PublicKey(mintAddress);
-  const fromPk = new PublicKey(fromBase58);
-  const toPk = new PublicKey(toBase58);
-
-  const fromAta = spl.getAssociatedTokenAddressSync(mintPk, fromPk, true);
-  const toAta = spl.getAssociatedTokenAddressSync(mintPk, toPk, true);
-
-  const tx = new Transaction();
-  const toAtaInfo = await conn.getAccountInfo(toAta);
-  if (!toAtaInfo) {
-    tx.add(
-      spl.createAssociatedTokenAccountInstruction(fromPk, toAta, toPk, mintPk),
-    );
-  }
-  const raw = BigInt(Math.round(amount * 10 ** decimals));
-  tx.add(spl.createTransferCheckedInstruction(fromAta, mintPk, toAta, fromPk, raw, decimals));
-
-  const { blockhash } = await conn.getLatestBlockhash("confirmed");
-  tx.recentBlockhash = blockhash;
-  tx.feePayer = fromPk;
-  return tx;
-}
+    mintPk = new
