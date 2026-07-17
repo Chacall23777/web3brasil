@@ -612,13 +612,24 @@ function BountyDetailDialog({
             </Badge>
           </div>
           <DialogDescription className="whitespace-pre-wrap text-foreground/80">
-            {bounty.description}
+            {linkifyText(bounty.description)}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-1.5 font-display font-bold text-xl text-primary">
-          <Coins className="h-5 w-5" />
-          {bounty.reward_amount.toLocaleString("pt-BR")} {bounty.token_symbol ?? ""}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 font-display font-bold text-xl text-primary">
+            <Coins className="h-5 w-5" />
+            {bounty.reward_amount.toLocaleString("pt-BR")} {bounty.token_symbol ?? ""}
+          </div>
+          {typeof window !== "undefined" && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Compartilhar:</span>
+              <ShareButtons
+                url={`${window.location.origin}/bounties?b=${bounty.id}`}
+                text={`Bounty: ${bounty.title} — ${bounty.reward_amount} ${bounty.token_symbol ?? ""}`}
+              />
+            </div>
+          )}
         </div>
 
         {isCreator && bounty.status === "open" && (
