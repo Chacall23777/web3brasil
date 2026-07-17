@@ -32,6 +32,14 @@ export default defineConfig({
         },
       ],
     },
+    environments: {
+      ssr: {
+        resolve: {
+          conditions: ["workerd", "worker", "browser", "module", "import", "default"],
+          externalConditions: ["workerd", "worker", "browser", "module", "import", "default"],
+        },
+      },
+    },
     plugins: [
       mcpPlugin(),
       VitePWA({
