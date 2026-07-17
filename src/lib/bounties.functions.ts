@@ -9,7 +9,6 @@ const RPC_URLS = [
   "https://solana.drpc.org",
 ];
 const RPC_URL = RPC_URLS[0];
-const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 
 const BANNED_PATTERNS: RegExp[] = [
   /auto ?les[aã]o|se cortar|se machucar|suic[ií]dio/i,
@@ -54,21 +53,25 @@ async function rpcCall(method: string, params: unknown[]): Promise<any> {
 }
 
 
-function findTransferInstruction(
-  tx: any,
-): { mint: string; destination: string; amount?: string; tokenAmount?: { amount: string; decimals: number } } | null {
-  const msg = tx?.transaction?.message;
-  const ixs: any[] = [
-    ...(msg?.instructions ?? []),
-    ...((tx?.meta?.innerInstructions ?? []).flatMap((i: any) => i.instructions ?? [])),
-  ];
-  for (const ix of ixs) {
-    if (ix?.programId !== TOKEN_PROGRAM) continue;
-    const parsed = ix?.parsed;
-    if (!parsed) continue;
-    if (parsed.type === "transferChecked" || parsed.type === "transfer") return parsed.info;
+function decimalToRawUnits(value: number, decimals: number): bigint {
+  const [whole, fraction = ""] = String(value).split(".");
+  const paddedFraction = fraction.padEnd(decimals, "0").slice(0, decimals);
+  return BigInt(`${whole || "0"}${paddedFraction || ""}`);
+}
+
+async function getVaultTokenBalance(owner: string, mint: string): Promise<bigint> {
+  const result = await rpcCall("getTokenAccountsByOwner", [
+    owner,
+    { mint },
+    { encoding: "jsonParsed", commitment: "confirmed" },
+  ]);
+  const accounts: any[] = result?.value ?? [];
+  let total = 0n;
+  for (const account of accounts) {
+    const amount = account?.account?.data?.parsed?.info?.tokenAmount?.amount;
+    if (amount) total += BigInt(amount);
   }
-  return null;
+  return total;
 }
 
 export const createBounty = createServerFn({ method: "POST" })
@@ -133,7 +136,7 @@ export const createBounty = createServerFn({ method: "POST" })
 export const confirmBountyDeposit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ bounty_id: z.string().uuid(), signature: z.string().min(20).max(150) }).parse(input),
+    z.object({ bounty_id: z.string().uuid(), signature: z.string().trim().min(20).max(150).optional() }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -146,36 +149,29 @@ export const confirmBountyDeposit = createServerFn({ method: "POST" })
     if (bounty.creator_id !== context.userId) throw new Error("Só o criador pode confirmar o depósito.");
     if (bounty.status !== "awaiting_deposit") throw new Error("Essa bounty não está aguardando depósito.");
 
-    const tx = await rpcCall("getTransaction", [
-      data.signature,
-      { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" },
-    ]);
-    if (!tx) throw new Error("Transação não encontrada. Aguarde alguns instantes e tente novamente.");
-    if (tx.meta?.err) throw new Error("A transação falhou on-chain.");
-
-    const transfer = findTransferInstruction(tx);
-    if (!transfer) throw new Error("Nenhuma transferência de token encontrada nessa transação.");
-    if (transfer.mint && transfer.mint !== bounty.token_mint) {
-      throw new Error("O token transferido não é o token esperado dessa bounty.");
+    if (data.signature) {
+      const tx = await rpcCall("getTransaction", [
+        data.signature,
+        { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" },
+      ]);
+      if (!tx) throw new Error("Transação não encontrada. Aguarde alguns instantes e tente novamente.");
+      if (tx.meta?.err) throw new Error("A transação falhou on-chain.");
     }
 
-    let rawAmount: string | undefined;
-    let decimals = bounty.token_decimals;
-    if (transfer.tokenAmount) {
-      rawAmount = transfer.tokenAmount.amount;
-      decimals = transfer.tokenAmount.decimals;
-    } else {
-      rawAmount = transfer.amount;
-    }
-    if (!rawAmount) throw new Error("Não foi possível ler o valor transferido.");
-    const expected = BigInt(Math.round(bounty.reward_amount * 10 ** decimals));
-    if (BigInt(rawAmount) < expected) {
-      throw new Error("O valor depositado é menor que a recompensa prometida.");
+    const expected = decimalToRawUnits(bounty.reward_amount, bounty.token_decimals);
+    const current = await getVaultTokenBalance(bounty.vault_address, bounty.token_mint);
+    if (current < expected) {
+      const divisor = 10 ** bounty.token_decimals;
+      const currentUi = Number(current) / divisor;
+      const missingUi = Number(expected - current) / divisor;
+      throw new Error(
+        `Depósito ainda insuficiente: recebemos ${currentUi.toLocaleString("pt-BR")} ${bounty.token_symbol ?? "tokens"}, faltam ${missingUi.toLocaleString("pt-BR")}. Verifique se enviou o mesmo mint para o endereço do cofre.`,
+      );
     }
 
     const { error } = await (supabaseAdmin as any)
       .from("bounties")
-      .update({ status: "open", deposit_tx_signature: data.signature })
+      .update({ status: "open", deposit_tx_signature: data.signature ?? null })
       .eq("id", bounty.id);
     if (error) throw new Error(error.message);
 
