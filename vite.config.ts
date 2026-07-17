@@ -32,23 +32,10 @@ export default defineConfig({
   vite: {
     resolve: {
       alias: [
-        {
-          find: /^rpc-websockets$/,
-          replacement: rpcWsBrowser,
-        },
-        {
-          find: /^rpc-websockets\/dist\/lib\/client$/,
-          replacement: rpcWsBrowser,
-        },
+        { find: /^rpc-websockets$/, replacement: rpcWsBrowser },
+        { find: /^rpc-websockets\/dist\/lib\/client$/, replacement: rpcWsBrowser },
+        ...solanaAliases,
       ],
-    },
-    environments: {
-      ssr: {
-        resolve: {
-          conditions: ["workerd", "worker", "browser", "module", "import", "default"],
-          externalConditions: ["workerd", "worker", "browser", "module", "import", "default"],
-        },
-      },
     },
     plugins: [
       mcpPlugin(),
