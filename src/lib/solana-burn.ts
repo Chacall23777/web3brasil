@@ -1,4 +1,4 @@
-import "./solana-buffer-polyfill";
+import { ensureSolanaBufferPolyfill } from "./solana-buffer-polyfill";
 
 export const VERIFICATION_MINT = "XhHLJpJtEHJucpYpAti2JvNs6eYsjeuFjRj9wvvaLDL";
 export const BURN_AMOUNT = 3000;
@@ -11,6 +11,7 @@ let _spl: any | undefined;
 
 async function loadWeb3(): Promise<any> {
   if (import.meta.env.SSR) throw new Error("Solana libs are browser-only");
+  await ensureSolanaBufferPolyfill();
   if (_web3) return _web3;
   _web3 = await import("@solana/web3.js");
   return _web3;
