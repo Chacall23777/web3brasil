@@ -231,6 +231,7 @@ function CreateBountyDialog({
   } | null>(null);
   const [rewardAmount, setRewardAmount] = useState("");
   const [deadline, setDeadline] = useState("");
+  const [taskLinks, setTaskLinks] = useState<{ label: string; url: string }[]>([]);
   const [result, setResult] = useState<{ id: string; vault_address: string } | null>(null);
   const [txSig, setTxSig] = useState("");
   const confirmDepositFn = useServerFn(confirmBountyDeposit);
@@ -243,6 +244,7 @@ function CreateBountyDialog({
     setTokenInfo(null);
     setRewardAmount("");
     setDeadline("");
+    setTaskLinks([]);
     setResult(null);
     setTxSig("");
   };
