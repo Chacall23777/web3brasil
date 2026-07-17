@@ -94,4 +94,26 @@ export async function lookupToken(mintAddress: string): Promise<TokenInfo> {
   const { PublicKey } = await loadWeb3();
   let mintPk: any;
   try {
-    mintPk = new
+    mintPk = new PublicKey(trimmed);
+  } catch {
+    throw new Error("Endereço de token inválido.");
+  }
+
+  const info = await getMintAccountInfo(mintPk);
+  const value: any = info?.value;
+  const parsed = value?.data?.parsed;
+  if (!parsed || parsed.type !== "mint") {
+    throw new Error("Este endereço não é um token SPL válido.");
+  }
+  const decimals: number = parsed.info?.decimals ?? 0;
+
+  const jup = await fetchJupiterMeta(trimmed);
+  return {
+    mint: trimmed,
+    decimals: typeof jup?.decimals === "number" ? jup.decimals : decimals,
+    symbol: jup?.symbol ?? null,
+    name: jup?.name ?? null,
+    logoURI: jup?.logoURI ?? null,
+  };
+}
+
