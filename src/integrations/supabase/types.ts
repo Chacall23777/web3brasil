@@ -915,7 +915,54 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      bounty_submissions_public: {
+        Row: {
+          bounty_id: string | null
+          created_at: string | null
+          id: string | null
+          note: string | null
+          proof_url: string | null
+          reviewed_at: string | null
+          status: string | null
+          submitter_id: string | null
+        }
+        Insert: {
+          bounty_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          note?: string | null
+          proof_url?: string | null
+          reviewed_at?: string | null
+          status?: string | null
+          submitter_id?: string | null
+        }
+        Update: {
+          bounty_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          note?: string | null
+          proof_url?: string | null
+          reviewed_at?: string | null
+          status?: string | null
+          submitter_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bounty_submissions_bounty_id_fkey"
+            columns: ["bounty_id"]
+            isOneToOne: false
+            referencedRelation: "bounties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bounty_submissions_submitter_id_fkey"
+            columns: ["submitter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       delete_email: {
