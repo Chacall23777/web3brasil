@@ -29,7 +29,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { lookupToken } from "@/lib/spl-token-lookup";
+import { lookupToken, isValidSolanaAddress } from "@/lib/spl-token-lookup";
 import {
   createBounty,
   confirmBountyDeposit,
@@ -244,13 +244,23 @@ function CreateBountyDialog({
   };
 
   const checkToken = async () => {
+    const trimmed = tokenMint.trim();
+    if (!trimmed) {
+      toast.error("Informe o endereço do mint do token.");
+      return;
+    }
+    if (!isValidSolanaAddress(trimmed)) {
+      toast.error("Endereço de mint inválido. Use um endereço Solana base58 válido (32–44 caracteres).");
+      setTokenInfo(null);
+      return;
+    }
     try {
-      const info = await lookupToken(tokenMint);
+      const info = await lookupToken(trimmed);
       setTokenInfo({ symbol: info.symbol ?? null, name: info.name ?? null, decimals: info.decimals });
       toast.success(`Token encontrado: ${info.symbol ?? info.name ?? "OK"}`);
     } catch (e: any) {
       setTokenInfo(null);
-      toast.error(e?.message ?? "Token inválido.");
+      toast.error(e?.message ?? "Não foi possível ler o token.");
     }
   };
 

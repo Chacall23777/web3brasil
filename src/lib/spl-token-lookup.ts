@@ -33,6 +33,12 @@ export interface SplTokenInfo {
   logo?: string;
 }
 
+const SOLANA_BASE58_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+export function isValidSolanaAddress(address: string): boolean {
+  return SOLANA_BASE58_RE.test((address ?? "").trim());
+}
+
 async function fetchJupiterMeta(mint: string): Promise<Partial<SplTokenInfo>> {
   try {
     const res = await fetch(`https://tokens.jup.ag/token/${mint}`);
