@@ -7,6 +7,11 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { fileURLToPath } from "node:url";
+
+const rpcWsBrowser = fileURLToPath(
+  new URL("./node_modules/rpc-websockets/dist/index.browser.mjs", import.meta.url),
+);
 
 export default defineConfig({
   tanstackStart: {
