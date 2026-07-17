@@ -463,7 +463,7 @@ function BountyDetailDialog({
     queryKey: ["bounty_submissions", bounty.id],
     queryFn: async () => {
       const { data } = await (supabase as any)
-        .from("bounty_submissions")
+        .from("bounty_submissions_public")
         .select("*")
         .eq("bounty_id", bounty.id)
         .order("created_at", { ascending: false });
