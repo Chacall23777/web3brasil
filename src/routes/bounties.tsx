@@ -13,7 +13,11 @@ import {
   X,
   Check,
   RotateCcw,
+  Link2,
+  Trash2,
 } from "lucide-react";
+import { linkifyText } from "@/lib/linkify";
+import { ShareButtons } from "@/components/ShareButtons";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
