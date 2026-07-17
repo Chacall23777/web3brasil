@@ -67,8 +67,8 @@ export const createBounty = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        title: z.string().trim().min(3).max(140),
-        description: z.string().trim().min(10).max(4000),
+        title: z.string().trim().min(1).max(140),
+        description: z.string().trim().min(1).max(4000),
         token_mint: z.string().trim().min(30).max(50),
         token_symbol: z.string().trim().max(20).nullable().optional(),
         token_name: z.string().trim().max(80).nullable().optional(),
