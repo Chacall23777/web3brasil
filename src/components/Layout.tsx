@@ -59,6 +59,7 @@ export function Layout() {
             <Link to="/comunidade" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.community")}</Link>
             <Link to="/buscar" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Buscar</Link>
             <Link to="/equipe" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.team")}</Link>
+            <Link to="/desafios" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Desafios</Link>
             {user && (
               <Link to="/mensagens" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Mensagens</Link>
             )}
@@ -109,6 +110,7 @@ export function Layout() {
           <Link to="/comunidade" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.community")}</Link>
           <Link to="/buscar" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Buscar</Link>
           <Link to="/equipe" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>{t("nav.team")}</Link>
+          <Link to="/desafios" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Desafios</Link>
           {user && <Link to="/mensagens" className="px-3 py-1.5 rounded-md hover:bg-muted" activeProps={{ className: "bg-muted" }}>Mensagens</Link>}
           {user && <Link to="/verificacao" className="px-3 py-1.5 rounded-md hover:bg-muted text-yellow-500" activeProps={{ className: "bg-muted" }}>{t("nav.verify")}</Link>}
 
