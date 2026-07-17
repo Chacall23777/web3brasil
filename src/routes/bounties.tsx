@@ -418,6 +418,59 @@ function CreateBountyDialog({
                   />
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-1.5">
+                    <Link2 className="h-3.5 w-3.5" /> Links da tarefa (opcional)
+                  </Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setTaskLinks((prev) => [...prev, { label: "", url: "" }])
+                    }
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar link
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Ex: perfil no X para seguir, post para curtir/repostar, tweet a responder.
+                </p>
+                {taskLinks.map((l, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input
+                      placeholder="Rótulo (ex: Seguir no X)"
+                      value={l.label}
+                      onChange={(e) =>
+                        setTaskLinks((prev) =>
+                          prev.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)),
+                        )
+                      }
+                      className="w-1/3"
+                    />
+                    <Input
+                      placeholder="https://..."
+                      value={l.url}
+                      onChange={(e) =>
+                        setTaskLinks((prev) =>
+                          prev.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)),
+                        )
+                      }
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() =>
+                        setTaskLinks((prev) => prev.filter((_, j) => j !== i))
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </div>
             <DialogFooter>
               <Button disabled={busy || !title || !description || !tokenInfo} onClick={submit}>
