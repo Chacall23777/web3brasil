@@ -1,4 +1,4 @@
-import "./solana-buffer-polyfill";
+import { ensureSolanaBufferPolyfill } from "./solana-buffer-polyfill";
 
 const RPC_URL = "https://api.mainnet-beta.solana.com";
 
@@ -7,6 +7,7 @@ let _spl: any | undefined;
 
 async function loadWeb3(): Promise<any> {
   if (import.meta.env.SSR) throw new Error("Solana libs are browser-only");
+  await ensureSolanaBufferPolyfill();
   if (_web3) return _web3;
   _web3 = await import("@solana/web3.js");
   return _web3;
@@ -14,6 +15,7 @@ async function loadWeb3(): Promise<any> {
 
 async function loadSpl(): Promise<any> {
   if (import.meta.env.SSR) throw new Error("Solana libs are browser-only");
+  await ensureSolanaBufferPolyfill();
   if (_spl) return _spl;
   _spl = await import("@solana/spl-token");
   return _spl;
