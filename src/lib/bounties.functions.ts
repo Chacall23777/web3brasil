@@ -54,7 +54,7 @@ async function rpcCall(method: string, params: unknown[]): Promise<any> {
 
 
 function decimalToRawUnits(value: number, decimals: number): bigint {
-  const [whole, fraction = ""] = String(value).split(".");
+  const [whole, fraction = ""] = value.toFixed(decimals).split(".");
   const paddedFraction = fraction.padEnd(decimals, "0").slice(0, decimals);
   return BigInt(`${whole || "0"}${paddedFraction || ""}`);
 }
