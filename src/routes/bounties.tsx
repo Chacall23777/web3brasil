@@ -246,7 +246,7 @@ function CreateBountyDialog({
   const checkToken = async () => {
     try {
       const info = await lookupToken(tokenMint);
-      setTokenInfo({ symbol: info.symbol, name: info.name, decimals: info.decimals });
+      setTokenInfo({ symbol: info.symbol ?? null, name: info.name ?? null, decimals: info.decimals });
       toast.success(`Token encontrado: ${info.symbol ?? info.name ?? "OK"}`);
     } catch (e: any) {
       setTokenInfo(null);
