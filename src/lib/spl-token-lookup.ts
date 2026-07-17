@@ -1,6 +1,10 @@
 import { ensureSolanaBufferPolyfill } from "./solana-buffer-polyfill";
 
-const RPC_URL = "https://api.mainnet-beta.solana.com";
+const RPC_URLS = [
+  "https://solana-rpc.publicnode.com",
+  "https://rpc.ankr.com/solana",
+  "https://api.mainnet-beta.solana.com",
+];
 
 let _web3: any | undefined;
 let _spl: any | undefined;
