@@ -175,6 +175,151 @@ export type Database = {
           },
         ]
       }
+      bounties: {
+        Row: {
+          created_at: string
+          creator_id: string
+          deadline: string | null
+          deposit_tx_signature: string | null
+          description: string
+          id: string
+          reward_amount: number
+          status: string
+          stream_url: string | null
+          title: string
+          token_decimals: number
+          token_mint: string
+          token_name: string | null
+          token_symbol: string | null
+          updated_at: string
+          vault_address: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          deadline?: string | null
+          deposit_tx_signature?: string | null
+          description: string
+          id?: string
+          reward_amount: number
+          status?: string
+          stream_url?: string | null
+          title: string
+          token_decimals?: number
+          token_mint: string
+          token_name?: string | null
+          token_symbol?: string | null
+          updated_at?: string
+          vault_address: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          deadline?: string | null
+          deposit_tx_signature?: string | null
+          description?: string
+          id?: string
+          reward_amount?: number
+          status?: string
+          stream_url?: string | null
+          title?: string
+          token_decimals?: number
+          token_mint?: string
+          token_name?: string | null
+          token_symbol?: string | null
+          updated_at?: string
+          vault_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bounties_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bounty_submissions: {
+        Row: {
+          bounty_id: string
+          created_at: string
+          id: string
+          note: string | null
+          payout_tx_signature: string | null
+          proof_url: string
+          reviewed_at: string | null
+          status: string
+          submitter_id: string
+          submitter_wallet: string
+        }
+        Insert: {
+          bounty_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          payout_tx_signature?: string | null
+          proof_url: string
+          reviewed_at?: string | null
+          status?: string
+          submitter_id: string
+          submitter_wallet: string
+        }
+        Update: {
+          bounty_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          payout_tx_signature?: string | null
+          proof_url?: string
+          reviewed_at?: string | null
+          status?: string
+          submitter_id?: string
+          submitter_wallet?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bounty_submissions_bounty_id_fkey"
+            columns: ["bounty_id"]
+            isOneToOne: false
+            referencedRelation: "bounties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bounty_submissions_submitter_id_fkey"
+            columns: ["submitter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bounty_vault_keys: {
+        Row: {
+          bounty_id: string
+          created_at: string
+          vault_secret_key: string
+        }
+        Insert: {
+          bounty_id: string
+          created_at?: string
+          vault_secret_key: string
+        }
+        Update: {
+          bounty_id?: string
+          created_at?: string
+          vault_secret_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bounty_vault_keys_bounty_id_fkey"
+            columns: ["bounty_id"]
+            isOneToOne: true
+            referencedRelation: "bounties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           content: string
