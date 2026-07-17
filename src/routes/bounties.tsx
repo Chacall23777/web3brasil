@@ -282,10 +282,27 @@ function CreateBountyDialog({
     }
     setBusy(true);
     try {
+      const validLinks = taskLinks
+        .map((l) => ({ label: l.label.trim(), url: l.url.trim() }))
+        .filter((l) => l.url);
+      for (const l of validLinks) {
+        try {
+          const u = new URL(l.url);
+          if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error();
+        } catch {
+          toast.error(`Link inválido: ${l.url}`);
+          setBusy(false);
+          return;
+        }
+      }
+      const linksBlock = validLinks.length
+        ? "\n\n🔗 Links da tarefa:\n" +
+          validLinks.map((l) => (l.label ? `• ${l.label}: ${l.url}` : `• ${l.url}`)).join("\n")
+        : "";
       const r = await createBountyFn({
         data: {
           title,
-          description,
+          description: description + linksBlock,
           token_mint: tokenMint.trim(),
           token_symbol: tokenInfo.symbol,
           token_name: tokenInfo.name,
