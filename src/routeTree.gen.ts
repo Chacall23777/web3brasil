@@ -27,6 +27,7 @@ import { Route as MensagensIndexRouteImport } from './routes/mensagens.index'
 import { Route as UIdRouteImport } from './routes/u.$id'
 import { Route as PostIdRouteImport } from './routes/post.$id'
 import { Route as MensagensUserIdRouteImport } from './routes/mensagens.$userId'
+import { Route as DesafiosIdRouteImport } from './routes/desafios.$id'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as UNNameRouteImport } from './routes/u.n.$name'
@@ -128,6 +129,11 @@ const MensagensUserIdRoute = MensagensUserIdRouteImport.update({
   path: '/$userId',
   getParentRoute: () => MensagensRoute,
 } as any)
+const DesafiosIdRoute = DesafiosIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DesafiosRoute,
+} as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
@@ -191,7 +197,7 @@ export interface FileRoutesByFullPath {
   '/bounties': typeof BountiesRoute
   '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
-  '/desafios': typeof DesafiosRoute
+  '/desafios': typeof DesafiosRouteWithChildren
   '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
@@ -201,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/verificacao': typeof VerificacaoRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/desafios/$id': typeof DesafiosIdRoute
   '/mensagens/$userId': typeof MensagensUserIdRoute
   '/post/$id': typeof PostIdRoute
   '/u/$id': typeof UIdRoute
@@ -221,7 +228,7 @@ export interface FileRoutesByTo {
   '/bounties': typeof BountiesRoute
   '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
-  '/desafios': typeof DesafiosRoute
+  '/desafios': typeof DesafiosRouteWithChildren
   '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/verificacao': typeof VerificacaoRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/desafios/$id': typeof DesafiosIdRoute
   '/mensagens/$userId': typeof MensagensUserIdRoute
   '/post/$id': typeof PostIdRoute
   '/u/$id': typeof UIdRoute
@@ -251,7 +259,7 @@ export interface FileRoutesById {
   '/bounties': typeof BountiesRoute
   '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
-  '/desafios': typeof DesafiosRoute
+  '/desafios': typeof DesafiosRouteWithChildren
   '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
@@ -261,6 +269,7 @@ export interface FileRoutesById {
   '/verificacao': typeof VerificacaoRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/desafios/$id': typeof DesafiosIdRoute
   '/mensagens/$userId': typeof MensagensUserIdRoute
   '/post/$id': typeof PostIdRoute
   '/u/$id': typeof UIdRoute
@@ -293,6 +302,7 @@ export interface FileRouteTypes {
     | '/verificacao'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/desafios/$id'
     | '/mensagens/$userId'
     | '/post/$id'
     | '/u/$id'
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/verificacao'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/desafios/$id'
     | '/mensagens/$userId'
     | '/post/$id'
     | '/u/$id'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/verificacao'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/desafios/$id'
     | '/mensagens/$userId'
     | '/post/$id'
     | '/u/$id'
@@ -373,7 +385,7 @@ export interface RootRouteChildren {
   BountiesRoute: typeof BountiesRoute
   BuscarRoute: typeof BuscarRoute
   ComunidadeRoute: typeof ComunidadeRoute
-  DesafiosRoute: typeof DesafiosRoute
+  DesafiosRoute: typeof DesafiosRouteWithChildren
   DevelopersRoute: typeof DevelopersRoute
   EquipeRoute: typeof EquipeRoute
   McpRoute: typeof McpRoute
@@ -521,6 +533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MensagensUserIdRouteImport
       parentRoute: typeof MensagensRoute
     }
+    '/desafios/$id': {
+      id: '/desafios/$id'
+      path: '/$id'
+      fullPath: '/desafios/$id'
+      preLoaderRoute: typeof DesafiosIdRouteImport
+      parentRoute: typeof DesafiosRoute
+    }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
       path: '/.well-known/oauth-protected-resource'
@@ -594,6 +613,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DesafiosRouteChildren {
+  DesafiosIdRoute: typeof DesafiosIdRoute
+}
+
+const DesafiosRouteChildren: DesafiosRouteChildren = {
+  DesafiosIdRoute: DesafiosIdRoute,
+}
+
+const DesafiosRouteWithChildren = DesafiosRoute._addFileChildren(
+  DesafiosRouteChildren,
+)
+
 interface MensagensRouteChildren {
   MensagensUserIdRoute: typeof MensagensUserIdRoute
   MensagensIndexRoute: typeof MensagensIndexRoute
@@ -629,7 +660,7 @@ const rootRouteChildren: RootRouteChildren = {
   BountiesRoute: BountiesRoute,
   BuscarRoute: BuscarRoute,
   ComunidadeRoute: ComunidadeRoute,
-  DesafiosRoute: DesafiosRoute,
+  DesafiosRoute: DesafiosRouteWithChildren,
   DevelopersRoute: DevelopersRoute,
   EquipeRoute: EquipeRoute,
   McpRoute: McpRoute,
