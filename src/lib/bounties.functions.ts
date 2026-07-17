@@ -59,17 +59,28 @@ function decimalToRawUnits(value: number, decimals: number): bigint {
   return BigInt(`${whole || "0"}${paddedFraction || ""}`);
 }
 
+const TOKEN_PROGRAM_IDS = [
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", // SPL Token classic
+  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb", // Token-2022
+];
+
 async function getVaultTokenBalance(owner: string, mint: string): Promise<bigint> {
-  const result = await rpcCall("getTokenAccountsByOwner", [
-    owner,
-    { mint },
-    { encoding: "jsonParsed", commitment: "confirmed" },
-  ]);
-  const accounts: any[] = result?.value ?? [];
   let total = 0n;
-  for (const account of accounts) {
-    const amount = account?.account?.data?.parsed?.info?.tokenAmount?.amount;
-    if (amount) total += BigInt(amount);
+  for (const programId of TOKEN_PROGRAM_IDS) {
+    try {
+      const result = await rpcCall("getTokenAccountsByOwner", [
+        owner,
+        { mint, programId },
+        { encoding: "jsonParsed", commitment: "confirmed" },
+      ]);
+      const accounts: any[] = result?.value ?? [];
+      for (const account of accounts) {
+        const amount = account?.account?.data?.parsed?.info?.tokenAmount?.amount;
+        if (amount) total += BigInt(amount);
+      }
+    } catch {
+      // try next program
+    }
   }
   return total;
 }
