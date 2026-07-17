@@ -322,10 +322,12 @@ function CreateBountyDialog({
   };
 
   const confirmDeposit = async () => {
-    if (!result || !txSig.trim()) return;
+    if (!result) return;
     setBusy(true);
     try {
-      await confirmDepositFn({ data: { bounty_id: result.id, signature: txSig.trim() } });
+      await confirmDepositFn({
+        data: { bounty_id: result.id, signature: txSig.trim() || undefined },
+      });
       toast.success("Depósito confirmado — bounty publicada!");
       onCreated();
       onOpenChange(false);
@@ -485,8 +487,8 @@ function CreateBountyDialog({
               <DialogTitle>Deposite a recompensa</DialogTitle>
               <DialogDescription>
                 Envie exatamente {rewardAmount} {tokenInfo?.symbol} para o endereço abaixo, a partir
-                da sua carteira (Phantom, Solflare etc). Depois cole a assinatura da transação para
-                publicar a bounty.
+                da sua carteira (Phantom, Solflare etc). Depois clique em verificar — vamos ler o
+                saldo real do cofre na Solana.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-2">
@@ -495,18 +497,18 @@ function CreateBountyDialog({
                 <div className="font-mono text-sm break-all">{result?.vault_address}</div>
               </div>
               <div className="space-y-1.5">
-                <Label>Assinatura da transação (após enviar)</Label>
+                <Label>Assinatura da transação (opcional)</Label>
                 <Input
                   value={txSig}
                   onChange={(e) => setTxSig(e.target.value)}
-                  placeholder="Cole aqui a signature"
+                  placeholder="Pode colar a signature ou deixar em branco"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button disabled={busy || !txSig.trim()} onClick={confirmDeposit}>
+              <Button disabled={busy} onClick={confirmDeposit}>
                 {busy && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-                Confirmar depósito e publicar
+                Verificar depósito e publicar
               </Button>
             </DialogFooter>
           </>
