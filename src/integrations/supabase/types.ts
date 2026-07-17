@@ -320,6 +320,257 @@ export type Database = {
           },
         ]
       }
+      challenge_distributions: {
+        Row: {
+          amount: number
+          attempted_at: string | null
+          challenge_id: string
+          confirmed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          participant_id: string | null
+          status: string
+          tx_signature: string | null
+          wallet: string
+        }
+        Insert: {
+          amount: number
+          attempted_at?: string | null
+          challenge_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          participant_id?: string | null
+          status?: string
+          tx_signature?: string | null
+          wallet: string
+        }
+        Update: {
+          amount?: number
+          attempted_at?: string | null
+          challenge_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          participant_id?: string | null
+          status?: string
+          tx_signature?: string | null
+          wallet?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_distributions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_distributions_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_distributions_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_participants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_escrow_keys: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          secret_key: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          secret_key: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          secret_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_escrow_keys_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: true
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_participants: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          id: string
+          proof_url: string
+          status: string
+          user_id: string
+          validated_at: string | null
+          validated_by: string | null
+          wallet: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          id?: string
+          proof_url: string
+          status?: string
+          user_id: string
+          validated_at?: string | null
+          validated_by?: string | null
+          wallet: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          proof_url?: string
+          status?: string
+          user_id?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          wallet?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_validations: {
+        Row: {
+          created_at: string
+          id: string
+          participant_id: string
+          vote: boolean
+          voter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_id: string
+          vote: boolean
+          voter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_id?: string
+          vote?: boolean
+          voter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_validations_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_validations_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_participants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          amount_per_winner: number
+          cover_url: string | null
+          created_at: string
+          creator_id: string
+          deposit_tx: string | null
+          deposit_verified_at: string | null
+          description: string
+          ends_at: string
+          escrow_wallet: string
+          id: string
+          rules_json: Json
+          rules_template: string
+          starts_at: string
+          status: string
+          title: string
+          token_decimals: number
+          token_mint: string
+          token_name: string | null
+          token_symbol: string | null
+          total_amount: number
+          updated_at: string
+          validation_mode: string
+          winners_count: number
+        }
+        Insert: {
+          amount_per_winner: number
+          cover_url?: string | null
+          created_at?: string
+          creator_id: string
+          deposit_tx?: string | null
+          deposit_verified_at?: string | null
+          description: string
+          ends_at: string
+          escrow_wallet: string
+          id?: string
+          rules_json?: Json
+          rules_template?: string
+          starts_at?: string
+          status?: string
+          title: string
+          token_decimals: number
+          token_mint: string
+          token_name?: string | null
+          token_symbol?: string | null
+          total_amount: number
+          updated_at?: string
+          validation_mode?: string
+          winners_count: number
+        }
+        Update: {
+          amount_per_winner?: number
+          cover_url?: string | null
+          created_at?: string
+          creator_id?: string
+          deposit_tx?: string | null
+          deposit_verified_at?: string | null
+          description?: string
+          ends_at?: string
+          escrow_wallet?: string
+          id?: string
+          rules_json?: Json
+          rules_template?: string
+          starts_at?: string
+          status?: string
+          title?: string
+          token_decimals?: number
+          token_mint?: string
+          token_name?: string | null
+          token_symbol?: string | null
+          total_amount?: number
+          updated_at?: string
+          validation_mode?: string
+          winners_count?: number
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
@@ -959,6 +1210,38 @@ export type Database = {
             columns: ["submitter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_participants_public: {
+        Row: {
+          challenge_id: string | null
+          created_at: string | null
+          id: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          challenge_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          challenge_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
             referencedColumns: ["id"]
           },
         ]
