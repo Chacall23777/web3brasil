@@ -16,6 +16,7 @@ import { Route as MensagensRouteImport } from './routes/mensagens'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as EquipeRouteImport } from './routes/equipe'
 import { Route as DevelopersRouteImport } from './routes/developers'
+import { Route as DesafiosRouteImport } from './routes/desafios'
 import { Route as ComunidadeRouteImport } from './routes/comunidade'
 import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as BountiesRouteImport } from './routes/bounties'
@@ -70,6 +71,11 @@ const EquipeRoute = EquipeRouteImport.update({
 const DevelopersRoute = DevelopersRouteImport.update({
   id: '/developers',
   path: '/developers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DesafiosRoute = DesafiosRouteImport.update({
+  id: '/desafios',
+  path: '/desafios',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComunidadeRoute = ComunidadeRouteImport.update({
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/bounties': typeof BountiesRoute
   '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
+  '/desafios': typeof DesafiosRoute
   '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/bounties': typeof BountiesRoute
   '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
+  '/desafios': typeof DesafiosRoute
   '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
@@ -243,6 +251,7 @@ export interface FileRoutesById {
   '/bounties': typeof BountiesRoute
   '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
+  '/desafios': typeof DesafiosRoute
   '/developers': typeof DevelopersRoute
   '/equipe': typeof EquipeRoute
   '/mcp': typeof McpRoute
@@ -274,6 +283,7 @@ export interface FileRouteTypes {
     | '/bounties'
     | '/buscar'
     | '/comunidade'
+    | '/desafios'
     | '/developers'
     | '/equipe'
     | '/mcp'
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/bounties'
     | '/buscar'
     | '/comunidade'
+    | '/desafios'
     | '/developers'
     | '/equipe'
     | '/mcp'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/bounties'
     | '/buscar'
     | '/comunidade'
+    | '/desafios'
     | '/developers'
     | '/equipe'
     | '/mcp'
@@ -361,6 +373,7 @@ export interface RootRouteChildren {
   BountiesRoute: typeof BountiesRoute
   BuscarRoute: typeof BuscarRoute
   ComunidadeRoute: typeof ComunidadeRoute
+  DesafiosRoute: typeof DesafiosRoute
   DevelopersRoute: typeof DevelopersRoute
   EquipeRoute: typeof EquipeRoute
   McpRoute: typeof McpRoute
@@ -429,6 +442,13 @@ declare module '@tanstack/react-router' {
       path: '/developers'
       fullPath: '/developers'
       preLoaderRoute: typeof DevelopersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/desafios': {
+      id: '/desafios'
+      path: '/desafios'
+      fullPath: '/desafios'
+      preLoaderRoute: typeof DesafiosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/comunidade': {
@@ -609,6 +629,7 @@ const rootRouteChildren: RootRouteChildren = {
   BountiesRoute: BountiesRoute,
   BuscarRoute: BuscarRoute,
   ComunidadeRoute: ComunidadeRoute,
+  DesafiosRoute: DesafiosRoute,
   DevelopersRoute: DevelopersRoute,
   EquipeRoute: EquipeRoute,
   McpRoute: McpRoute,
