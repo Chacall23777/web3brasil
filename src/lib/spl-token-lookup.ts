@@ -1,6 +1,10 @@
 import { ensureSolanaBufferPolyfill } from "./solana-buffer-polyfill";
 
-const RPC_URL = "https://api.mainnet-beta.solana.com";
+const RPC_URLS = [
+  "https://solana-rpc.publicnode.com",
+  "https://rpc.ankr.com/solana",
+  "https://api.mainnet-beta.solana.com",
+];
 
 let _web3: any | undefined;
 let _spl: any | undefined;
@@ -58,19 +62,38 @@ export async function lookupToken(mint: string): Promise<SplTokenInfo> {
     throw new Error("Endereço de mint inválido.");
   }
 
-  const conn = new Connection(RPC_URL, "confirmed");
-  let mintInfo: any;
-  try {
-    mintInfo = await getMint(conn, mintPk);
-  } catch {
-    throw new Error("Não foi possível ler o mint. Verifique o endereço.");
+  // Try Jupiter first (fast, no RPC needed, includes decimals + metadata)
+  const meta = await fetchJupiterMeta(trimmed);
+  const jupRes = await fetch(`https://tokens.jup.ag/token/${trimmed}`).catch(() => null);
+  let decimals: number | undefined;
+  if (jupRes && jupRes.ok) {
+    try {
+      const j = await jupRes.json();
+      if (typeof j?.decimals === "number") decimals = j.decimals;
+    } catch {}
   }
 
-  const meta = await fetchJupiterMeta(trimmed);
+  // Fall back to on-chain lookup via multiple public RPCs
+  if (decimals === undefined) {
+    let lastErr: any;
+    for (const url of RPC_URLS) {
+      try {
+        const conn = new Connection(url, "confirmed");
+        const mintInfo = await getMint(conn, mintPk);
+        decimals = mintInfo.decimals;
+        break;
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    if (decimals === undefined) {
+      throw new Error("Não foi possível ler o mint. Verifique o endereço.");
+    }
+  }
 
   return {
     mint: trimmed,
-    decimals: mintInfo.decimals,
+    decimals,
     symbol: meta.symbol,
     name: meta.name,
     logo: meta.logo,
