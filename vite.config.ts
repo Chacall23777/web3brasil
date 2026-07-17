@@ -24,11 +24,11 @@ export default defineConfig({
       alias: [
         {
           find: /^rpc-websockets$/,
-          replacement: "rpc-websockets/dist/index.browser.mjs",
+          replacement: rpcWsBrowser,
         },
         {
           find: /^rpc-websockets\/dist\/lib\/client$/,
-          replacement: "rpc-websockets/dist/index.browser.mjs",
+          replacement: rpcWsBrowser,
         },
       ],
     },
