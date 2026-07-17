@@ -7,6 +7,9 @@ const RPC_URLS = [
   "https://api.mainnet-beta.solana.com",
   "https://rpc.ankr.com/solana",
   "https://solana.drpc.org",
+  "https://mainnet.helius-rpc.com/?api-key=",
+  "https://go.getblock.io/4136d34f90a6488b84214ae26f0ed5f4",
+  "https://solana.blockdaemon.com",
 ];
 const RPC_URL = RPC_URLS[0];
 
@@ -22,35 +25,50 @@ function containsBannedContent(text: string): boolean {
   return BANNED_PATTERNS.some((re) => re.test(text));
 }
 
+async function fetchWithTimeout(url: string, init: RequestInit, ms: number) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 async function rpcCall(method: string, params: unknown[]): Promise<any> {
-  const delays = [0, 500, 1200, 2500];
-  let lastErr: unknown;
+  const delays = [0, 400, 1000, 2000, 3500];
+  const errors: string[] = [];
+  const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method, params });
   for (const d of delays) {
     if (d) await new Promise((r) => setTimeout(r, d));
     for (const url of RPC_URLS) {
       try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-        });
-        if (res.status === 429 || res.status >= 500) {
-          lastErr = new Error(`RPC ${res.status} @ ${url}`);
+        const res = await fetchWithTimeout(
+          url,
+          { method: "POST", headers: { "content-type": "application/json" }, body },
+          6000,
+        );
+        if (res.status === 429 || res.status >= 500 || res.status === 403 || res.status === 401) {
+          errors.push(`${res.status} @ ${new URL(url).host}`);
           continue;
         }
         const j = await res.json();
         if (j.error) {
-          lastErr = new Error(String(j.error?.message ?? ""));
+          errors.push(`${j.error?.message ?? "err"} @ ${new URL(url).host}`);
           continue;
         }
         return j.result;
-      } catch (e) {
-        lastErr = e;
+      } catch (e: any) {
+        errors.push(`${e?.name === "AbortError" ? "timeout" : e?.message ?? "fetch fail"} @ ${new URL(url).host}`);
       }
     }
   }
-  throw new Error("RPC da Solana indisponível no momento. Tente novamente em instantes.");
+  const summary = Array.from(new Set(errors)).slice(0, 3).join(" | ");
+  throw new Error(
+    `RPC da Solana indisponível no momento (${summary || "sem detalhes"}). Aguarde alguns segundos e tente novamente.`,
+  );
 }
+
 
 
 function decimalToRawUnits(value: number, decimals: number): bigint {
