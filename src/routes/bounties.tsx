@@ -13,7 +13,11 @@ import {
   X,
   Check,
   RotateCcw,
+  Link2,
+  Trash2,
 } from "lucide-react";
+import { linkifyText } from "@/lib/linkify";
+import { ShareButtons } from "@/components/ShareButtons";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -227,6 +231,7 @@ function CreateBountyDialog({
   } | null>(null);
   const [rewardAmount, setRewardAmount] = useState("");
   const [deadline, setDeadline] = useState("");
+  const [taskLinks, setTaskLinks] = useState<{ label: string; url: string }[]>([]);
   const [result, setResult] = useState<{ id: string; vault_address: string } | null>(null);
   const [txSig, setTxSig] = useState("");
   const confirmDepositFn = useServerFn(confirmBountyDeposit);
@@ -239,6 +244,7 @@ function CreateBountyDialog({
     setTokenInfo(null);
     setRewardAmount("");
     setDeadline("");
+    setTaskLinks([]);
     setResult(null);
     setTxSig("");
   };
@@ -276,10 +282,27 @@ function CreateBountyDialog({
     }
     setBusy(true);
     try {
+      const validLinks = taskLinks
+        .map((l) => ({ label: l.label.trim(), url: l.url.trim() }))
+        .filter((l) => l.url);
+      for (const l of validLinks) {
+        try {
+          const u = new URL(l.url);
+          if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error();
+        } catch {
+          toast.error(`Link inválido: ${l.url}`);
+          setBusy(false);
+          return;
+        }
+      }
+      const linksBlock = validLinks.length
+        ? "\n\n🔗 Links da tarefa:\n" +
+          validLinks.map((l) => (l.label ? `• ${l.label}: ${l.url}` : `• ${l.url}`)).join("\n")
+        : "";
       const r = await createBountyFn({
         data: {
           title,
-          description,
+          description: description + linksBlock,
           token_mint: tokenMint.trim(),
           token_symbol: tokenInfo.symbol,
           token_name: tokenInfo.name,
@@ -394,6 +417,59 @@ function CreateBountyDialog({
                     onChange={(e) => setDeadline(e.target.value)}
                   />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-1.5">
+                    <Link2 className="h-3.5 w-3.5" /> Links da tarefa (opcional)
+                  </Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setTaskLinks((prev) => [...prev, { label: "", url: "" }])
+                    }
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar link
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Ex: perfil no X para seguir, post para curtir/repostar, tweet a responder.
+                </p>
+                {taskLinks.map((l, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input
+                      placeholder="Rótulo (ex: Seguir no X)"
+                      value={l.label}
+                      onChange={(e) =>
+                        setTaskLinks((prev) =>
+                          prev.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)),
+                        )
+                      }
+                      className="w-1/3"
+                    />
+                    <Input
+                      placeholder="https://..."
+                      value={l.url}
+                      onChange={(e) =>
+                        setTaskLinks((prev) =>
+                          prev.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)),
+                        )
+                      }
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() =>
+                        setTaskLinks((prev) => prev.filter((_, j) => j !== i))
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
             <DialogFooter>
@@ -536,13 +612,24 @@ function BountyDetailDialog({
             </Badge>
           </div>
           <DialogDescription className="whitespace-pre-wrap text-foreground/80">
-            {bounty.description}
+            {linkifyText(bounty.description)}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-1.5 font-display font-bold text-xl text-primary">
-          <Coins className="h-5 w-5" />
-          {bounty.reward_amount.toLocaleString("pt-BR")} {bounty.token_symbol ?? ""}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 font-display font-bold text-xl text-primary">
+            <Coins className="h-5 w-5" />
+            {bounty.reward_amount.toLocaleString("pt-BR")} {bounty.token_symbol ?? ""}
+          </div>
+          {typeof window !== "undefined" && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Compartilhar:</span>
+              <ShareButtons
+                url={`${window.location.origin}/bounties?b=${bounty.id}`}
+                text={`Bounty: ${bounty.title} — ${bounty.reward_amount} ${bounty.token_symbol ?? ""}`}
+              />
+            </div>
+          )}
         </div>
 
         {isCreator && bounty.status === "open" && (
