@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Feed } from "@/components/Feed";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { BountySection } from "@/components/BountySection";
 
 
 export const Route = createFileRoute("/")({
@@ -33,6 +34,8 @@ function Home() {
           </div>
         )}
       </section>
+
+      <BountySection />
 
       <section>
         <h2 className="font-display text-xl font-semibold mb-3">Últimas postagens</h2>
