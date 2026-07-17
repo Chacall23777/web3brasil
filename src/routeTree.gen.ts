@@ -18,6 +18,7 @@ import { Route as EquipeRouteImport } from './routes/equipe'
 import { Route as DevelopersRouteImport } from './routes/developers'
 import { Route as ComunidadeRouteImport } from './routes/comunidade'
 import { Route as BuscarRouteImport } from './routes/buscar'
+import { Route as BountiesRouteImport } from './routes/bounties'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -79,6 +80,11 @@ const ComunidadeRoute = ComunidadeRouteImport.update({
 const BuscarRoute = BuscarRouteImport.update({
   id: '/buscar',
   path: '/buscar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BountiesRoute = BountiesRouteImport.update({
+  id: '/bounties',
+  path: '/bounties',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/bounties': typeof BountiesRoute
   '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
   '/developers': typeof DevelopersRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/bounties': typeof BountiesRoute
   '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
   '/developers': typeof DevelopersRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/bounties': typeof BountiesRoute
   '/buscar': typeof BuscarRoute
   '/comunidade': typeof ComunidadeRoute
   '/developers': typeof DevelopersRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/bounties'
     | '/buscar'
     | '/comunidade'
     | '/developers'
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/bounties'
     | '/buscar'
     | '/comunidade'
     | '/developers'
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/bounties'
     | '/buscar'
     | '/comunidade'
     | '/developers'
@@ -346,6 +358,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  BountiesRoute: typeof BountiesRoute
   BuscarRoute: typeof BuscarRoute
   ComunidadeRoute: typeof ComunidadeRoute
   DevelopersRoute: typeof DevelopersRoute
@@ -430,6 +443,13 @@ declare module '@tanstack/react-router' {
       path: '/buscar'
       fullPath: '/buscar'
       preLoaderRoute: typeof BuscarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bounties': {
+      id: '/bounties'
+      path: '/bounties'
+      fullPath: '/bounties'
+      preLoaderRoute: typeof BountiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -586,6 +606,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  BountiesRoute: BountiesRoute,
   BuscarRoute: BuscarRoute,
   ComunidadeRoute: ComunidadeRoute,
   DevelopersRoute: DevelopersRoute,
