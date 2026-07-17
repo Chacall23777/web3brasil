@@ -9,9 +9,19 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { fileURLToPath } from "node:url";
 
-const rpcWsBrowser = fileURLToPath(
-  new URL("./node_modules/rpc-websockets/dist/index.browser.mjs", import.meta.url),
-);
+const resolveBrowserMjs = (pkg: string, relPath: string) =>
+  fileURLToPath(new URL(`./node_modules/${pkg}/${relPath}`, import.meta.url));
+
+const rpcWsBrowser = resolveBrowserMjs("rpc-websockets", "dist/index.browser.mjs");
+const solanaAliases = [
+  { find: /^@solana\/codecs$/, replacement: resolveBrowserMjs("@solana/codecs", "dist/index.browser.mjs") },
+  { find: /^@solana\/codecs-core$/, replacement: resolveBrowserMjs("@solana/codecs-core", "dist/index.browser.mjs") },
+  { find: /^@solana\/codecs-numbers$/, replacement: resolveBrowserMjs("@solana/codecs-numbers", "dist/index.browser.mjs") },
+  { find: /^@solana\/codecs-strings$/, replacement: resolveBrowserMjs("@solana/codecs-strings", "dist/index.browser.mjs") },
+  { find: /^@solana\/codecs-data-structures$/, replacement: resolveBrowserMjs("@solana/codecs-data-structures", "dist/index.browser.mjs") },
+  { find: /^@solana\/options$/, replacement: resolveBrowserMjs("@solana/options", "dist/index.browser.mjs") },
+  { find: /^@solana\/errors$/, replacement: resolveBrowserMjs("@solana/errors", "dist/index.browser.mjs") },
+];
 
 export default defineConfig({
   tanstackStart: {
