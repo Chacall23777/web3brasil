@@ -15,6 +15,18 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    resolve: {
+      alias: [
+        {
+          find: /^rpc-websockets$/,
+          replacement: "rpc-websockets/dist/index.browser.mjs",
+        },
+        {
+          find: /^rpc-websockets\/dist\/lib\/client$/,
+          replacement: "rpc-websockets/dist/index.browser.mjs",
+        },
+      ],
+    },
     plugins: [
       mcpPlugin(),
       VitePWA({
