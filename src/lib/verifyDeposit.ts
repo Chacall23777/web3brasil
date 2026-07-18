@@ -14,11 +14,8 @@ export const verifyDeposit = async (txHash: string, cofreAddress: string) => {
       .single()
 
     if (error) throw error
-
-    console.log('✅ Depósito verificado:', data)
     return { success: true, data }
   } catch (error: any) {
-    console.error('❌ Erro:', error.message)
     return { success: false, error: error.message }
   }
 }
