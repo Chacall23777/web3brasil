@@ -15,13 +15,10 @@ export const verifyDeposit = async (txHash: string, cofreAddress: string) => {
 
     if (error) throw error
 
-    console.log('✅ Depósito validado:', data)
+    console.log('✅ Depósito verificado:', data)
     return { success: true, data }
   } catch (error: any) {
-    console.error('❌ Erro na validação:', error.message)
+    console.error('❌ Erro:', error.message)
     return { success: false, error: error.message }
   }
 }
-     
-
- 
