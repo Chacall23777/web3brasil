@@ -30,9 +30,9 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 // safe to ship in client-side code. They are used only if the environment
 // variables aren't injected at build time (e.g. Lovable Cloud sync delay,
 // host that ignores .env, stale build cache).
-const FALLBACK_SUPABASE_URL = 'https://ofzzrmqiedmyfjaupaka.supabase.co';
+const FALLBACK_SUPABASE_URL = 'https://qfjntfjkctrwkflifahc.supabase.co';
 const FALLBACK_SUPABASE_PUBLISHABLE_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9menpybXFpZWRteWZqYXVwYWthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MjYzMjIsImV4cCI6MjA5ODUwMjMyMn0.tPKi8S_mW-XglA8MilpabeFGDlTvujjEqZXkOs3yMws';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmam50ZmprY3Ryd2tmbGlmYWhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMjUxMTMsImV4cCI6MjA5OTkwMTExM30.kdCqeKakKdAtI92fpm9qyiqFDi3tqkFJpMnG7wgheu4';
 
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
@@ -77,9 +77,3 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
     return Reflect.get(_supabase, prop, receiver);
   },
 });
-    
-
-
-
-      
- 
