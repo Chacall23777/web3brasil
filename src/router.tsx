@@ -13,7 +13,4 @@ export const getRouter = () => {
   });
 
   return router;
-};import ChallengesTab from './components/ChallengesTab'
-
-// Dentro do <Router> ou <Routes>
-<Route path="/desafios" component={ChallengesTab} />
+};
