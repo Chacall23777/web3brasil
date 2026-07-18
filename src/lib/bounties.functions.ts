@@ -99,47 +99,89 @@ export const createBounty = createServerFn({ method: "POST" })
 export const confirmBountyDeposit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ bounty_id: z.string().uuid(), signature: z.string().trim().min(20).max(150).optional() }).parse(input),
+    z
+      .object({
+        bounty_id: z.string().uuid(),
+        signature: z
+          .string()
+          .trim()
+          .min(64, "Assinatura inválida.")
+          .max(100, "Assinatura inválida.")
+          .optional(),
+      })
+      .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: bounty, error: fetchErr } = await (supabaseAdmin as any)
-      .from("bounties")
-      .select("id, creator_id, token_mint, token_decimals, reward_amount, vault_address, status")
-      .eq("id", data.bounty_id)
-      .single();
-    if (fetchErr || !bounty) throw new Error("Bounty não encontrada.");
-    if (bounty.creator_id !== context.userId) throw new Error("Só o criador pode confirmar o depósito.");
-    if (bounty.status !== "awaiting_deposit") throw new Error("Essa bounty não está aguardando depósito.");
+  .handler(async ({ data, context }) =>
+    withFriendlyErrors("confirmDeposit", async () => {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const {
+        rpcCall,
+        getVaultTokenBalance,
+        verifyDepositTransaction,
+        assertValidPublicKey,
+        assertValidSignature,
+        SolanaRpcError,
+      } = await import("@/lib/solana-rpc.server");
+      // Reference rpcCall so tree-shakers keep it (used indirectly via helpers)
+      void rpcCall;
+      void SolanaRpcError;
 
-    if (data.signature) {
-      const tx = await rpcCall("getTransaction", [
-        data.signature,
-        { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" },
-      ]);
-      if (!tx) throw new Error("Transação não encontrada. Aguarde alguns instantes e tente novamente.");
-      if (tx.meta?.err) throw new Error("A transação falhou on-chain.");
-    }
+      const { data: bounty, error: fetchErr } = await (supabaseAdmin as any)
+        .from("bounties")
+        .select("id, creator_id, token_mint, token_symbol, token_decimals, reward_amount, vault_address, status, deposit_tx_signature")
+        .eq("id", data.bounty_id)
+        .single();
+      if (fetchErr || !bounty) throw new Error("Bounty não encontrada.");
+      if (bounty.creator_id !== context.userId) throw new Error("Só o criador pode confirmar o depósito.");
+      if (bounty.status !== "awaiting_deposit") throw new Error("Essa bounty não está aguardando depósito.");
 
-    const expected = decimalToRawUnits(bounty.reward_amount, bounty.token_decimals);
-    const current = await getVaultTokenBalance(bounty.vault_address, bounty.token_mint);
-    if (current < expected) {
-      const divisor = 10 ** bounty.token_decimals;
-      const currentUi = Number(current) / divisor;
-      const missingUi = Number(expected - current) / divisor;
-      throw new Error(
-        `Depósito ainda insuficiente: recebemos ${currentUi.toLocaleString("pt-BR")} ${bounty.token_symbol ?? "tokens"}, faltam ${missingUi.toLocaleString("pt-BR")}. Verifique se enviou o mesmo mint para o endereço do cofre.`,
-      );
-    }
+      assertValidPublicKey(bounty.vault_address, "endereço do cofre");
+      assertValidPublicKey(bounty.token_mint, "endereço do mint");
+      const expected = decimalToRawUnits(bounty.reward_amount, bounty.token_decimals);
 
-    const { error } = await (supabaseAdmin as any)
-      .from("bounties")
-      .update({ status: "open", deposit_tx_signature: data.signature ?? null })
-      .eq("id", bounty.id);
-    if (error) throw new Error(error.message);
+      // Optional signature path: strict on-chain proof (existence, status, destination, amount, mint).
+      if (data.signature) {
+        const sig = assertValidSignature(data.signature);
 
-    return { ok: true };
-  });
+        // Prevent replay: same signature already used for any bounty.
+        const { data: reused } = await (supabaseAdmin as any)
+          .from("bounties")
+          .select("id")
+          .eq("deposit_tx_signature", sig)
+          .neq("id", bounty.id)
+          .maybeSingle();
+        if (reused) {
+          throw new Error("Essa assinatura de transação já foi usada em outra bounty.");
+        }
+
+        await verifyDepositTransaction({
+          signature: sig,
+          vault: bounty.vault_address,
+          mint: bounty.token_mint,
+          expectedRaw: expected,
+        });
+      }
+
+      // Always double-check with a live vault balance read (source of truth).
+      const current = await getVaultTokenBalance(bounty.vault_address, bounty.token_mint);
+      if (current < expected) {
+        const divisor = 10 ** bounty.token_decimals;
+        const currentUi = Number(current) / divisor;
+        const missingUi = Number(expected - current) / divisor;
+        throw new Error(
+          `Depósito ainda insuficiente: recebemos ${currentUi.toLocaleString("pt-BR")} ${bounty.token_symbol ?? "tokens"}, faltam ${missingUi.toLocaleString("pt-BR")}. Verifique se enviou o mesmo mint para o endereço do cofre.`,
+        );
+      }
+
+      const { error } = await (supabaseAdmin as any)
+        .from("bounties")
+        .update({ status: "open", deposit_tx_signature: data.signature ?? null })
+        .eq("id", bounty.id);
+      if (error) throw new Error(error.message);
+
+      return { ok: true };
+    }),
+  );
 
 export const submitBountyProof = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
