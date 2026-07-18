@@ -2,17 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const RPC_URLS = [
-  "https://solana-rpc.publicnode.com",
-  "https://api.mainnet-beta.solana.com",
-  "https://rpc.ankr.com/solana",
-  "https://solana.drpc.org",
-  "https://mainnet.helius-rpc.com/?api-key=",
-  "https://go.getblock.io/4136d34f90a6488b84214ae26f0ed5f4",
-  "https://solana.blockdaemon.com",
-];
-const RPC_URL = RPC_URLS[0];
-
 const BANNED_PATTERNS: RegExp[] = [
   /auto ?les[aã]o|se cortar|se machucar|suic[ií]dio/i,
   /matar|assassin|arma de fogo|explosivo/i,
@@ -25,82 +14,27 @@ function containsBannedContent(text: string): boolean {
   return BANNED_PATTERNS.some((re) => re.test(text));
 }
 
-async function fetchWithTimeout(url: string, init: RequestInit, ms: number) {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), ms);
-  try {
-    return await fetch(url, { ...init, signal: ctrl.signal });
-  } finally {
-    clearTimeout(t);
-  }
-}
-
-async function rpcCall(method: string, params: unknown[]): Promise<any> {
-  const delays = [0, 400, 1000, 2000, 3500];
-  const errors: string[] = [];
-  const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method, params });
-  for (const d of delays) {
-    if (d) await new Promise((r) => setTimeout(r, d));
-    for (const url of RPC_URLS) {
-      try {
-        const res = await fetchWithTimeout(
-          url,
-          { method: "POST", headers: { "content-type": "application/json" }, body },
-          6000,
-        );
-        if (res.status === 429 || res.status >= 500 || res.status === 403 || res.status === 401) {
-          errors.push(`${res.status} @ ${new URL(url).host}`);
-          continue;
-        }
-        const j = await res.json();
-        if (j.error) {
-          errors.push(`${j.error?.message ?? "err"} @ ${new URL(url).host}`);
-          continue;
-        }
-        return j.result;
-      } catch (e: any) {
-        errors.push(`${e?.name === "AbortError" ? "timeout" : e?.message ?? "fetch fail"} @ ${new URL(url).host}`);
-      }
-    }
-  }
-  const summary = Array.from(new Set(errors)).slice(0, 3).join(" | ");
-  throw new Error(
-    `RPC da Solana indisponível no momento (${summary || "sem detalhes"}). Aguarde alguns segundos e tente novamente.`,
-  );
-}
-
-
-
 function decimalToRawUnits(value: number, decimals: number): bigint {
   const [whole, fraction = ""] = value.toFixed(decimals).split(".");
   const paddedFraction = fraction.padEnd(decimals, "0").slice(0, decimals);
   return BigInt(`${whole || "0"}${paddedFraction || ""}`);
 }
 
-const TOKEN_PROGRAM_IDS = [
-  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", // SPL Token classic
-  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb", // Token-2022
-];
-
-async function getVaultTokenBalance(owner: string, mint: string): Promise<bigint> {
-  let total = 0n;
-  for (const programId of TOKEN_PROGRAM_IDS) {
-    try {
-      const result = await rpcCall("getTokenAccountsByOwner", [
-        owner,
-        { mint, programId },
-        { encoding: "jsonParsed", commitment: "confirmed" },
-      ]);
-      const accounts: any[] = result?.value ?? [];
-      for (const account of accounts) {
-        const amount = account?.account?.data?.parsed?.info?.tokenAmount?.amount;
-        if (amount) total += BigInt(amount);
-      }
-    } catch {
-      // try next program
-    }
+// Wraps a handler so any error surfaces as a friendly message (SolanaRpcError.friendly)
+// while full context is logged server-side. Never leaks raw provider errors.
+async function withFriendlyErrors<T>(op: string, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (e: any) {
+    const friendly = e?.friendly || e?.message || "Algo deu errado. Tente novamente em instantes.";
+    console.error(`[bounties:${op}] failed`, {
+      name: e?.name,
+      message: e?.message,
+      friendly: e?.friendly,
+      stack: e?.stack?.split("\n").slice(0, 5).join(" | "),
+    });
+    throw new Error(friendly);
   }
-  return total;
 }
 
 export const createBounty = createServerFn({ method: "POST" })
