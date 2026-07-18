@@ -669,7 +669,7 @@ function BountyDetailDialog({
             <Input
               value={depositSig}
               onChange={(e) => setDepositSig(e.target.value)}
-              placeholder="Assinatura da transação (opcional)"
+              placeholder="Signature ou link do Solscan (opcional)"
             />
             <Button size="sm" onClick={doConfirmDeposit} disabled={busy} className="w-full">
               {busy && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
