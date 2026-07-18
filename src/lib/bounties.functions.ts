@@ -102,12 +102,9 @@ export const confirmBountyDeposit = createServerFn({ method: "POST" })
     z
       .object({
         bounty_id: z.string().uuid(),
-        signature: z
-          .string()
-          .trim()
-          .min(64, "Assinatura inválida.")
-          .max(100, "Assinatura inválida.")
-          .optional(),
+        // Accepts a raw base58 signature or an explorer URL (Solscan, Explorer, SolanaFM…).
+        // Extraction happens server-side; keep max generous for full URLs with query strings.
+        signature: z.string().trim().min(1).max(500).optional(),
       })
       .parse(input),
   )
