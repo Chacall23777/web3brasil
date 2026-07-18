@@ -2,17 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const RPC_URLS = [
-  "https://solana-rpc.publicnode.com",
-  "https://api.mainnet-beta.solana.com",
-  "https://rpc.ankr.com/solana",
-  "https://solana.drpc.org",
-  "https://mainnet.helius-rpc.com/?api-key=",
-  "https://go.getblock.io/4136d34f90a6488b84214ae26f0ed5f4",
-  "https://solana.blockdaemon.com",
-];
-const RPC_URL = RPC_URLS[0];
-
 const BANNED_PATTERNS: RegExp[] = [
   /auto ?les[aã]o|se cortar|se machucar|suic[ií]dio/i,
   /matar|assassin|arma de fogo|explosivo/i,
@@ -25,82 +14,27 @@ function containsBannedContent(text: string): boolean {
   return BANNED_PATTERNS.some((re) => re.test(text));
 }
 
-async function fetchWithTimeout(url: string, init: RequestInit, ms: number) {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), ms);
-  try {
-    return await fetch(url, { ...init, signal: ctrl.signal });
-  } finally {
-    clearTimeout(t);
-  }
-}
-
-async function rpcCall(method: string, params: unknown[]): Promise<any> {
-  const delays = [0, 400, 1000, 2000, 3500];
-  const errors: string[] = [];
-  const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method, params });
-  for (const d of delays) {
-    if (d) await new Promise((r) => setTimeout(r, d));
-    for (const url of RPC_URLS) {
-      try {
-        const res = await fetchWithTimeout(
-          url,
-          { method: "POST", headers: { "content-type": "application/json" }, body },
-          6000,
-        );
-        if (res.status === 429 || res.status >= 500 || res.status === 403 || res.status === 401) {
-          errors.push(`${res.status} @ ${new URL(url).host}`);
-          continue;
-        }
-        const j = await res.json();
-        if (j.error) {
-          errors.push(`${j.error?.message ?? "err"} @ ${new URL(url).host}`);
-          continue;
-        }
-        return j.result;
-      } catch (e: any) {
-        errors.push(`${e?.name === "AbortError" ? "timeout" : e?.message ?? "fetch fail"} @ ${new URL(url).host}`);
-      }
-    }
-  }
-  const summary = Array.from(new Set(errors)).slice(0, 3).join(" | ");
-  throw new Error(
-    `RPC da Solana indisponível no momento (${summary || "sem detalhes"}). Aguarde alguns segundos e tente novamente.`,
-  );
-}
-
-
-
 function decimalToRawUnits(value: number, decimals: number): bigint {
   const [whole, fraction = ""] = value.toFixed(decimals).split(".");
   const paddedFraction = fraction.padEnd(decimals, "0").slice(0, decimals);
   return BigInt(`${whole || "0"}${paddedFraction || ""}`);
 }
 
-const TOKEN_PROGRAM_IDS = [
-  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", // SPL Token classic
-  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb", // Token-2022
-];
-
-async function getVaultTokenBalance(owner: string, mint: string): Promise<bigint> {
-  let total = 0n;
-  for (const programId of TOKEN_PROGRAM_IDS) {
-    try {
-      const result = await rpcCall("getTokenAccountsByOwner", [
-        owner,
-        { mint, programId },
-        { encoding: "jsonParsed", commitment: "confirmed" },
-      ]);
-      const accounts: any[] = result?.value ?? [];
-      for (const account of accounts) {
-        const amount = account?.account?.data?.parsed?.info?.tokenAmount?.amount;
-        if (amount) total += BigInt(amount);
-      }
-    } catch {
-      // try next program
-    }
+// Wraps a handler so any error surfaces as a friendly message (SolanaRpcError.friendly)
+// while full context is logged server-side. Never leaks raw provider errors.
+async function withFriendlyErrors<T>(op: string, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (e: any) {
+    const friendly = e?.friendly || e?.message || "Algo deu errado. Tente novamente em instantes.";
+    console.error(`[bounties:${op}] failed`, {
+      name: e?.name,
+      message: e?.message,
+      friendly: e?.friendly,
+      stack: e?.stack?.split("\n").slice(0, 5).join(" | "),
+    });
+    throw new Error(friendly);
   }
-  return total;
 }
 
 export const createBounty = createServerFn({ method: "POST" })
@@ -165,47 +99,89 @@ export const createBounty = createServerFn({ method: "POST" })
 export const confirmBountyDeposit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ bounty_id: z.string().uuid(), signature: z.string().trim().min(20).max(150).optional() }).parse(input),
+    z
+      .object({
+        bounty_id: z.string().uuid(),
+        signature: z
+          .string()
+          .trim()
+          .min(64, "Assinatura inválida.")
+          .max(100, "Assinatura inválida.")
+          .optional(),
+      })
+      .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: bounty, error: fetchErr } = await (supabaseAdmin as any)
-      .from("bounties")
-      .select("id, creator_id, token_mint, token_decimals, reward_amount, vault_address, status")
-      .eq("id", data.bounty_id)
-      .single();
-    if (fetchErr || !bounty) throw new Error("Bounty não encontrada.");
-    if (bounty.creator_id !== context.userId) throw new Error("Só o criador pode confirmar o depósito.");
-    if (bounty.status !== "awaiting_deposit") throw new Error("Essa bounty não está aguardando depósito.");
+  .handler(async ({ data, context }) =>
+    withFriendlyErrors("confirmDeposit", async () => {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const {
+        rpcCall,
+        getVaultTokenBalance,
+        verifyDepositTransaction,
+        assertValidPublicKey,
+        assertValidSignature,
+        SolanaRpcError,
+      } = await import("@/lib/solana-rpc.server");
+      // Reference rpcCall so tree-shakers keep it (used indirectly via helpers)
+      void rpcCall;
+      void SolanaRpcError;
 
-    if (data.signature) {
-      const tx = await rpcCall("getTransaction", [
-        data.signature,
-        { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" },
-      ]);
-      if (!tx) throw new Error("Transação não encontrada. Aguarde alguns instantes e tente novamente.");
-      if (tx.meta?.err) throw new Error("A transação falhou on-chain.");
-    }
+      const { data: bounty, error: fetchErr } = await (supabaseAdmin as any)
+        .from("bounties")
+        .select("id, creator_id, token_mint, token_symbol, token_decimals, reward_amount, vault_address, status, deposit_tx_signature")
+        .eq("id", data.bounty_id)
+        .single();
+      if (fetchErr || !bounty) throw new Error("Bounty não encontrada.");
+      if (bounty.creator_id !== context.userId) throw new Error("Só o criador pode confirmar o depósito.");
+      if (bounty.status !== "awaiting_deposit") throw new Error("Essa bounty não está aguardando depósito.");
 
-    const expected = decimalToRawUnits(bounty.reward_amount, bounty.token_decimals);
-    const current = await getVaultTokenBalance(bounty.vault_address, bounty.token_mint);
-    if (current < expected) {
-      const divisor = 10 ** bounty.token_decimals;
-      const currentUi = Number(current) / divisor;
-      const missingUi = Number(expected - current) / divisor;
-      throw new Error(
-        `Depósito ainda insuficiente: recebemos ${currentUi.toLocaleString("pt-BR")} ${bounty.token_symbol ?? "tokens"}, faltam ${missingUi.toLocaleString("pt-BR")}. Verifique se enviou o mesmo mint para o endereço do cofre.`,
-      );
-    }
+      assertValidPublicKey(bounty.vault_address, "endereço do cofre");
+      assertValidPublicKey(bounty.token_mint, "endereço do mint");
+      const expected = decimalToRawUnits(bounty.reward_amount, bounty.token_decimals);
 
-    const { error } = await (supabaseAdmin as any)
-      .from("bounties")
-      .update({ status: "open", deposit_tx_signature: data.signature ?? null })
-      .eq("id", bounty.id);
-    if (error) throw new Error(error.message);
+      // Optional signature path: strict on-chain proof (existence, status, destination, amount, mint).
+      if (data.signature) {
+        const sig = assertValidSignature(data.signature);
 
-    return { ok: true };
-  });
+        // Prevent replay: same signature already used for any bounty.
+        const { data: reused } = await (supabaseAdmin as any)
+          .from("bounties")
+          .select("id")
+          .eq("deposit_tx_signature", sig)
+          .neq("id", bounty.id)
+          .maybeSingle();
+        if (reused) {
+          throw new Error("Essa assinatura de transação já foi usada em outra bounty.");
+        }
+
+        await verifyDepositTransaction({
+          signature: sig,
+          vault: bounty.vault_address,
+          mint: bounty.token_mint,
+          expectedRaw: expected,
+        });
+      }
+
+      // Always double-check with a live vault balance read (source of truth).
+      const current = await getVaultTokenBalance(bounty.vault_address, bounty.token_mint);
+      if (current < expected) {
+        const divisor = 10 ** bounty.token_decimals;
+        const currentUi = Number(current) / divisor;
+        const missingUi = Number(expected - current) / divisor;
+        throw new Error(
+          `Depósito ainda insuficiente: recebemos ${currentUi.toLocaleString("pt-BR")} ${bounty.token_symbol ?? "tokens"}, faltam ${missingUi.toLocaleString("pt-BR")}. Verifique se enviou o mesmo mint para o endereço do cofre.`,
+        );
+      }
+
+      const { error } = await (supabaseAdmin as any)
+        .from("bounties")
+        .update({ status: "open", deposit_tx_signature: data.signature ?? null })
+        .eq("id", bounty.id);
+      if (error) throw new Error(error.message);
+
+      return { ok: true };
+    }),
+  );
 
 export const submitBountyProof = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -272,7 +248,14 @@ async function payoutFromVault(
 
   const secretKey = Buffer.from(keyRow.vault_secret_key, "base64");
   const vaultKeypair = Keypair.fromSecretKey(secretKey);
-  const conn = new Connection(RPC_URL, "confirmed");
+  const rpcUrl =
+    process.env.HELIUS_RPC_URL ||
+    (process.env.HELIUS_API_KEY ? `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}` : undefined) ||
+    process.env.QUICKNODE_RPC_URL ||
+    process.env.TRITON_RPC_URL ||
+    process.env.SOLANA_RPC_URL ||
+    "https://solana-rpc.publicnode.com";
+  const conn = new Connection(rpcUrl, "confirmed");
 
   const mintPk = new PublicKey(bounty.token_mint);
   const toPk = new PublicKey(toBase58);
