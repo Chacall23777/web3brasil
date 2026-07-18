@@ -181,7 +181,7 @@ export const confirmBountyDeposit = createServerFn({ method: "POST" })
 
       const { error } = await (supabaseAdmin as any)
         .from("bounties")
-        .update({ status: "open", deposit_tx_signature: data.signature ?? null })
+        .update({ status: "open", deposit_tx_signature: sanitizedSig })
         .eq("id", bounty.id);
       if (error) throw new Error(error.message);
 
