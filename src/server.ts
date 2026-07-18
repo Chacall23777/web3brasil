@@ -1,3 +1,7 @@
+// Must be first: defines __filename/__dirname on workerd so that any
+// transitive Node-only import (e.g. commander via @solana/errors) doesn't
+// throw `ReferenceError: __filename is not defined` at module load.
+import "./lib/node-globals-polyfill";
 import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
