@@ -501,8 +501,11 @@ function CreateBountyDialog({
                 <Input
                   value={txSig}
                   onChange={(e) => setTxSig(e.target.value)}
-                  placeholder="Pode colar a signature ou deixar em branco"
+                  placeholder="Cole a signature ou o link do Solscan (https://solscan.io/tx/…)"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Aceitamos a assinatura base58 ou o link completo do Solscan/Explorer — extraímos a assinatura automaticamente.
+                </p>
               </div>
             </div>
             <DialogFooter>
@@ -666,7 +669,7 @@ function BountyDetailDialog({
             <Input
               value={depositSig}
               onChange={(e) => setDepositSig(e.target.value)}
-              placeholder="Assinatura da transação (opcional)"
+              placeholder="Signature ou link do Solscan (opcional)"
             />
             <Button size="sm" onClick={doConfirmDeposit} disabled={busy} className="w-full">
               {busy && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}

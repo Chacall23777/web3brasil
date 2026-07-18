@@ -102,12 +102,9 @@ export const confirmBountyDeposit = createServerFn({ method: "POST" })
     z
       .object({
         bounty_id: z.string().uuid(),
-        signature: z
-          .string()
-          .trim()
-          .min(64, "Assinatura inválida.")
-          .max(100, "Assinatura inválida.")
-          .optional(),
+        // Accepts a raw base58 signature or an explorer URL (Solscan, Explorer, SolanaFM…).
+        // Extraction happens server-side; keep max generous for full URLs with query strings.
+        signature: z.string().trim().min(1).max(500).optional(),
       })
       .parse(input),
   )
@@ -140,8 +137,17 @@ export const confirmBountyDeposit = createServerFn({ method: "POST" })
       const expected = decimalToRawUnits(bounty.reward_amount, bounty.token_decimals);
 
       // Optional signature path: strict on-chain proof (existence, status, destination, amount, mint).
+      let sanitizedSig: string | null = null;
       if (data.signature) {
-        const sig = assertValidSignature(data.signature);
+        const { extractSolanaSignature } = await import("@/lib/solana-signature");
+        const extracted = extractSolanaSignature(data.signature);
+        if (!extracted) {
+          throw new Error(
+            "Assinatura inválida. Cole a signature da transação ou o link do Solscan (ex.: https://solscan.io/tx/…).",
+          );
+        }
+        const sig = assertValidSignature(extracted);
+        sanitizedSig = sig;
 
         // Prevent replay: same signature already used for any bounty.
         const { data: reused } = await (supabaseAdmin as any)
@@ -175,7 +181,7 @@ export const confirmBountyDeposit = createServerFn({ method: "POST" })
 
       const { error } = await (supabaseAdmin as any)
         .from("bounties")
-        .update({ status: "open", deposit_tx_signature: data.signature ?? null })
+        .update({ status: "open", deposit_tx_signature: sanitizedSig })
         .eq("id", bounty.id);
       if (error) throw new Error(error.message);
 
