@@ -137,8 +137,17 @@ export const confirmBountyDeposit = createServerFn({ method: "POST" })
       const expected = decimalToRawUnits(bounty.reward_amount, bounty.token_decimals);
 
       // Optional signature path: strict on-chain proof (existence, status, destination, amount, mint).
+      let sanitizedSig: string | null = null;
       if (data.signature) {
-        const sig = assertValidSignature(data.signature);
+        const { extractSolanaSignature } = await import("@/lib/solana-signature");
+        const extracted = extractSolanaSignature(data.signature);
+        if (!extracted) {
+          throw new Error(
+            "Assinatura inválida. Cole a signature da transação ou o link do Solscan (ex.: https://solscan.io/tx/…).",
+          );
+        }
+        const sig = assertValidSignature(extracted);
+        sanitizedSig = sig;
 
         // Prevent replay: same signature already used for any bounty.
         const { data: reused } = await (supabaseAdmin as any)
