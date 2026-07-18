@@ -26,12 +26,24 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
+// Fallback values: these are the PUBLIC anon/publishable key and project URL,
+// safe to ship in client-side code. They are used only if the environment
+// variables aren't injected at build time (e.g. Lovable Cloud sync delay,
+// host that ignores .env, stale build cache).
+const FALLBACK_SUPABASE_URL = 'https://ofzzrmqiedmyfjaupaka.supabase.co';
+const FALLBACK_SUPABASE_PUBLISHABLE_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9menpybXFpZWRteWZqYXVwYWthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MjYzMjIsImV4cCI6MjA5ODUwMjMyMn0.tPKi8S_mW-XglA8MilpabeFGDlTvujjEqZXkOs3yMws';
 
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+  // Fall back again to the hardcoded public values if neither is set.
+  const SUPABASE_URL =
+    import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || FALLBACK_SUPABASE_URL;
+  const SUPABASE_PUBLISHABLE_KEY =
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    FALLBACK_SUPABASE_PUBLISHABLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
@@ -65,4 +77,9 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
     return Reflect.get(_supabase, prop, receiver);
   },
 });
+    
 
+
+
+      
+ 
