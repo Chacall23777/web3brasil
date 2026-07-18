@@ -4,10 +4,9 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Variáveis do Supabase não configuradas!')
-  throw new Error('Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no Lovable')
+  throw new Error('Faltam variáveis do Supabase. Verifique no Lovable: VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-console.log('✅ Supabase client criado com sucesso!')
+console.log('✅ Supabase conectado com sucesso!')
