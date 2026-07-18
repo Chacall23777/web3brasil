@@ -501,8 +501,11 @@ function CreateBountyDialog({
                 <Input
                   value={txSig}
                   onChange={(e) => setTxSig(e.target.value)}
-                  placeholder="Pode colar a signature ou deixar em branco"
+                  placeholder="Cole a signature ou o link do Solscan (https://solscan.io/tx/…)"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Aceitamos a assinatura base58 ou o link completo do Solscan/Explorer — extraímos a assinatura automaticamente.
+                </p>
               </div>
             </div>
             <DialogFooter>
