@@ -4,7 +4,6 @@ import { ensureSolanaBufferPolyfill } from "./solana-buffer-polyfill";
 const RPC_URLS = [
   "https://solana-rpc.publicnode.com",
   "https://rpc.ankr.com/solana",
-  "https://mainnet.helius-rpc.com/?api-key=15319106-b0d8-4e0e-a935-9d3b5f4b3d8f",
   "https://api.mainnet-beta.solana.com",
 ];
 
