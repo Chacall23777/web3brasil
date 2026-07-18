@@ -248,7 +248,14 @@ async function payoutFromVault(
 
   const secretKey = Buffer.from(keyRow.vault_secret_key, "base64");
   const vaultKeypair = Keypair.fromSecretKey(secretKey);
-  const conn = new Connection(RPC_URL, "confirmed");
+  const rpcUrl =
+    process.env.HELIUS_RPC_URL ||
+    (process.env.HELIUS_API_KEY ? `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}` : undefined) ||
+    process.env.QUICKNODE_RPC_URL ||
+    process.env.TRITON_RPC_URL ||
+    process.env.SOLANA_RPC_URL ||
+    "https://solana-rpc.publicnode.com";
+  const conn = new Connection(rpcUrl, "confirmed");
 
   const mintPk = new PublicKey(bounty.token_mint);
   const toPk = new PublicKey(toBase58);
