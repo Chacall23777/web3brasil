@@ -755,6 +755,30 @@ export type Database = {
         }
         Relationships: []
       }
+      kv_store: {
+        Row: {
+          created_at: string
+          key: string
+          owner_id: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          owner_id: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          owner_id?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           comment_id: string | null
