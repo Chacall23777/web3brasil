@@ -17,7 +17,7 @@ export async function kvGet<T = any>(key: string): Promise<KvEntry<T> | null> {
     .eq("key", key)
     .maybeSingle();
   if (error) throw error;
-  return (data as KvEntry<T>) ?? null;
+  return (data as unknown as KvEntry<T>) ?? null;
 }
 
 /** List keys, optionally filtered by prefix (public). */
@@ -26,7 +26,7 @@ export async function kvList<T = any>(prefix?: string): Promise<KvEntry<T>[]> {
   if (prefix) q = q.like("key", `${prefix}%`);
   const { data, error } = await q;
   if (error) throw error;
-  return (data as KvEntry<T>[]) ?? [];
+  return (data as unknown as KvEntry<T>[]) ?? [];
 }
 
 /** Upsert a key. Requires auth; caller becomes the owner. Only the owner may overwrite. */
@@ -40,7 +40,7 @@ export async function kvSet<T = any>(key: string, value: T): Promise<KvEntry<T>>
     .select()
     .single();
   if (error) throw error;
-  return data as KvEntry<T>;
+  return data as unknown as KvEntry<T>;
 }
 
 /** Delete a key (only owner via RLS). */
